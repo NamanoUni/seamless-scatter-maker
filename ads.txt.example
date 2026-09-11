@@ -1,0 +1,3 @@
+# AdSense承認後、YOUR_PUBLISHER_IDを実際のPublisher IDへ置き換え、
+# このファイルを ads.txt にリネームしてください。
+google.com, pub-YOUR_PUBLISHER_ID, DIRECT, f08c47fec0942fa0

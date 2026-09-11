@@ -1,0 +1,123 @@
+
+:root{
+  --public-max: 1040px;
+}
+.public-content{
+  background:#0d1015;
+  border-top:1px solid #313946;
+  padding:42px 18px 26px;
+}
+.public-card{
+  max-width:var(--public-max);
+  margin:0 auto;
+  padding:24px;
+  border:1px solid #313946;
+  border-radius:14px;
+  background:#161a21;
+  color:#eef2f7;
+}
+.public-card h2{
+  margin:0 0 12px;
+  font-size:20px;
+}
+.public-card p{
+  color:#b4becb;
+  line-height:1.8;
+  margin:8px 0;
+}
+.public-links{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 16px;
+  margin-top:18px;
+}
+.public-links a,.public-footer a{
+  color:#9bb8ff;
+  text-decoration:none;
+}
+.public-links a:hover,.public-footer a:hover{
+  text-decoration:underline;
+}
+.public-footer{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  flex-wrap:wrap;
+  padding:20px max(18px, calc((100vw - var(--public-max))/2));
+  border-top:1px solid #222a35;
+  background:#0a0d11;
+  color:#8793a2;
+  font-size:12px;
+}
+.public-footer-links{
+  display:flex;
+  gap:14px;
+}
+.info-page{
+  min-height:100vh;
+  background:#111318;
+  color:#eef2f7;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.info-shell{
+  width:min(900px,calc(100% - 32px));
+  margin:0 auto;
+  padding:38px 0 70px;
+}
+.info-nav{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:28px;
+}
+.info-nav a{
+  color:#9bb8ff;
+  text-decoration:none;
+}
+.info-card{
+  background:#1a1e25;
+  border:1px solid #313946;
+  border-radius:14px;
+  padding:clamp(20px,4vw,38px);
+}
+.info-card h1{
+  font-size:clamp(26px,4vw,38px);
+  margin:0 0 12px;
+}
+.info-card h2{
+  font-size:19px;
+  margin:30px 0 8px;
+}
+.info-card p,.info-card li{
+  color:#c0c8d3;
+  line-height:1.8;
+}
+.info-card code{
+  background:#10141a;
+  border:1px solid #313946;
+  border-radius:5px;
+  padding:2px 5px;
+}
+.info-card .note{
+  border-left:3px solid #7aa2ff;
+  padding:10px 14px;
+  background:#131923;
+  color:#cbd5e1;
+}
+.info-lang-block{
+  margin-top:38px;
+  padding-top:28px;
+  border-top:1px solid #313946;
+}
+.ad-placeholder-note{
+  margin-top:26px;
+  font-size:12px;
+  color:#8793a2;
+}
+@media(max-width:680px){
+  .public-content{padding:26px 12px 18px}
+  .public-card{padding:18px}
+  .info-shell{width:min(100% - 20px,900px);padding-top:18px}
+  .info-nav{align-items:flex-start;flex-direction:column}
+}

@@ -1,0 +1,2363 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="description" content="複数のPNG・SVG素材をブラウザ上でランダム配置し、シームレスなパターン画像を作成できる無料ツール。画像は端末内で処理されます。" />
+<meta name="robots" content="index,follow" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Seamless Scatter Maker" />
+<meta property="og:description" content="PNG・SVG素材からシームレスな散布パターンを作成。画像処理はブラウザ内で完結します。" />
+<link rel="stylesheet" href="site.css" />
+<title>Seamless Scatter Maker | シームレスパターン作成ツール</title>
+<style>
+  :root{
+    --bg:#111318; --panel:#1a1e25; --panel2:#202632; --text:#eef2f7;
+    --muted:#9aa6b2; --border:#313946; --accent:#7aa2ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+  .wrap{display:grid;grid-template-columns:840px 1fr;min-height:100vh}
+  aside{
+    padding:18px;background:var(--panel);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;overflow:hidden;max-height:100vh
+  }
+  main{display:flex;flex-direction:column;min-width:0}
+  h1{font-size:20px;margin:0 0 14px}
+  .hint{font-size:12px;line-height:1.6;color:var(--muted);margin-bottom:14px}
+  .drop{
+    flex:0 0 auto;
+    border:1px dashed #596476;border-radius:12px;padding:18px;text-align:center;
+    background:#161a21;cursor:pointer;transition:.15s;
+  }
+  .drop.drag{border-color:var(--accent);background:#1b2230}
+  .drop input{display:none}
+  .thumbs{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+    margin-top:10px;
+    flex:0 0 auto;
+    min-height:0;
+  }
+  .thumbs.compact{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding-bottom:6px;
+    scrollbar-width:thin;
+    height:108px;
+    min-height:108px;
+    flex:0 0 108px;
+    align-items:flex-start;
+  }
+  .thumbs.compact::-webkit-scrollbar{height:8px}
+  .thumbs.compact::-webkit-scrollbar-thumb{background:#384252;border-radius:999px}
+  .thumbs.compact::-webkit-scrollbar-track{background:#14181f}
+  .thumbs.compact .thumb{
+    flex:0 0 94px;
+    width:94px;
+    height:94px;
+    aspect-ratio:auto;
+  }
+  .thumb{
+    aspect-ratio:1;background:#0f1217;border:1px solid var(--border);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative
+  }
+  .thumb img{max-width:100%;max-height:100%}
+  .thumb button{
+    position:absolute;right:2px;top:2px;border:0;border-radius:999px;width:20px;height:20px;
+    background:#0009;color:#fff;cursor:pointer
+  }
+  .section{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+  .settingsScroll{
+    margin-top:10px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    min-height:0;
+    padding-right:6px;
+    padding-bottom:12px;
+    flex:1 1 auto;
+    border-top:1px solid var(--border);
+  }
+  .settingsScroll::-webkit-scrollbar{width:10px}
+  .settingsScroll::-webkit-scrollbar-thumb{background:#384252;border-radius:999px}
+  .settingsScroll::-webkit-scrollbar-track{background:#14181f}
+  .row{display:grid;grid-template-columns:1fr 130px;gap:10px;align-items:center;margin:10px 0}
+  .row label{font-size:13px;color:#d7dee8}
+  input[type=number],input[type=text],select{
+    width:100%;background:#10141a;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px
+  }
+  input:disabled{opacity:.45;cursor:not-allowed}
+  input[type=range]{width:100%}
+  .rangeRow{display:grid;grid-template-columns:1fr 70px;gap:8px;align-items:center}
+  .footerButtons{
+    flex:0 0 auto;
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px solid var(--border);
+    background:var(--panel);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  button.action{
+    border:1px solid var(--border);background:var(--panel2);color:var(--text);
+    padding:10px 12px;border-radius:9px;cursor:pointer
+  }
+  button.primary{background:var(--accent);color:#08111f;border-color:transparent;font-weight:700}
+  .canvasWrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+  canvas{cursor:grab;
+
+    max-width:100%;max-height:calc(100vh - 110px);box-shadow:0 10px 30px #0008;
+    background-image:
+      linear-gradient(45deg,#2b2f36 25%,transparent 25%),
+      linear-gradient(-45deg,#2b2f36 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#2b2f36 75%),
+      linear-gradient(-45deg,transparent 75%,#2b2f36 75%);
+    background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0;
+  }
+  .topbar{
+    height:54px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 18px;border-bottom:1px solid var(--border);background:#15191f
+  }
+  .status{font-size:12px;color:var(--muted);padding-left:12px}
+  .check{display:flex;align-items:center;gap:8px;font-size:13px}
+  .assetPanelTitle{font-size:13px;color:#d7dee8;margin:0 0 8px}
+  #assetControls{--asset-cols:48px minmax(78px,1fr) 68px 48px 48px 58px 58px 52px 52px 58px 90px;}
+  .assetList{display:flex;flex-direction:column;gap:8px}
+  .assetHeader{
+    display:grid;
+    grid-template-columns:var(--asset-cols);
+    gap:5px;
+    align-items:end;
+    padding:0 8px 7px 8px;
+    font-size:11px;
+    color:var(--muted);
+  }
+  .assetHeader > div{
+    min-width:0;
+    text-align:center;
+  }
+
+  .assetRow > *,.assetHeader > *{min-width:0}
+
+  .assetRow{
+    display:grid;
+    grid-template-columns:var(--asset-cols);
+    gap:5px;
+    align-items:center;
+    background:#141924;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:8px
+  }
+  .assetPreview{
+    width:48px;height:48px;display:flex;align-items:center;justify-content:center;
+    background:#0f1217;border:1px solid var(--border);border-radius:8px;overflow:hidden
+  }
+  .assetPreview img{max-width:100%;max-height:100%}
+  .assetMeta{min-width:0}
+  .assetName{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .assetSub{font-size:11px;color:var(--muted);margin-top:4px}
+  .assetWeight input,.assetMinCount input,.assetScale input{
+    width:100%;background:#10141a;color:var(--text);border:1px solid var(--border);
+    border-radius:8px;padding:8px 8px
+  }
+  .assetRotate,.assetFlip,.assetSizeToggle{font-size:12px;display:flex;align-items:center;gap:5px;justify-content:center}
+  .assetGroup select{
+    width:100%;background:#10141a;color:var(--text);border:1px solid var(--border);
+    border-radius:8px;padding:7px 5px;font-size:11px
+  }
+  .assetScale input{
+    width:100%;background:#10141a;color:var(--text);border:1px solid var(--border);
+    border-radius:8px;padding:8px 6px
+  }
+  .assetStats{font-size:12px;color:#d7dee8;line-height:1.5;white-space:nowrap}
+  .headBulk{
+    display:flex;gap:3px;align-items:center;justify-content:center;flex-wrap:wrap
+  }
+  .headBulk button{
+    border:1px solid var(--border);background:#151a22;color:var(--text);
+    border-radius:6px;padding:3px 5px;font-size:10px;cursor:pointer;line-height:1.1
+  }
+  .sizePreviewWrap{margin-top:12px}
+  .sizePreviewTitle{font-size:12px;color:#d7dee8;margin-bottom:7px}
+  .sizePreview{
+    display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;
+    min-height:110px;padding:12px;background:#11161d;border:1px solid var(--border);border-radius:10px
+  }
+  .sizePreviewItem{display:flex;flex-direction:column;align-items:center;gap:5px}
+  .sizePreviewBox{display:flex;align-items:flex-end;justify-content:center;width:90px;height:80px}
+  .sizePreviewBox img{max-width:100%;max-height:100%;object-fit:contain}
+  .sizePreviewLabel{font-size:10px;color:var(--muted);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+
+  .miniNote{font-size:11px;color:var(--muted);margin-top:8px}
+  .colHead{
+    display:flex;align-items:center;justify-content:center;gap:3px;
+    min-width:0;line-height:1.2;
+  }
+  .colTip{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:13px;height:13px;flex:0 0 13px;border:1px solid #566171;
+    border-radius:50%;font-size:9px;color:var(--muted);cursor:help;
+  }
+
+
+  .assetRow input,.assetRow select{
+    min-width:0;
+    max-width:100%;
+  }
+  .assetFlipRate input{
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    padding:7px 4px;
+    text-align:center;
+  }
+  .assetStats{
+    min-width:0;
+    overflow:hidden;
+    font-size:11px;
+  }
+
+
+  canvas.dragging{cursor:grabbing}
+
+  .footerCompact{
+    gap:7px;
+    padding-top:9px;
+  }
+  .actionGenerate{
+    width:100%;
+    min-height:52px;
+    font-size:18px;
+    font-weight:800;
+    letter-spacing:.08em;
+    border-radius:10px;
+  }
+  .footerToolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .toolGroup{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    min-width:0;
+  }
+  .exportTools{margin-left:auto}
+  button.toolAction{
+    min-height:32px;
+    padding:6px 9px;
+    border-radius:7px;
+    font-size:11px;
+    white-space:nowrap;
+    background:#181e28;
+  }
+  button.toolAction:hover{background:#202838}
+  button.exportPrimary{
+    border-color:#4e6796;
+    color:#dce8ff;
+  }
+  .clearLink{
+    align-self:flex-start;
+    border:0;
+    background:transparent;
+    color:#7f8a99;
+    font-size:10px;
+    padding:2px 4px;
+    cursor:pointer;
+  }
+  .clearLink:hover{color:#d9a0a0;text-decoration:underline}
+  .titleRow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .titleRow h1{margin:0 0 14px}
+  .languageControl{
+    margin-bottom:14px;
+    display:flex;
+    align-items:center;
+    gap:5px;
+    white-space:nowrap;
+    font-size:11px;
+    color:var(--muted);
+  }
+  .languageLabel{color:var(--muted)}
+  .languageSep{opacity:.45}
+  .langChoice{
+    border:0;
+    background:transparent;
+    color:#aeb8c6;
+    padding:3px 4px;
+    font:inherit;
+    font-weight:700;
+    cursor:pointer;
+    border-radius:5px;
+  }
+  .langChoice:hover:not(:disabled){color:var(--text);background:#202838}
+  .langChoice:disabled{
+    color:var(--text);
+    cursor:default;
+    opacity:1;
+    text-decoration:underline;
+    text-underline-offset:3px;
+  }
+
+
+  .groupShareState{
+    margin-top:7px;
+    font-size:11px;
+    line-height:1.5;
+    color:#9aa6b2;
+  }
+
+  .helpPopover{
+    position:fixed;
+    z-index:9999;
+    max-width:min(290px, calc(100vw - 24px));
+    padding:9px 11px;
+    border:1px solid #465264;
+    border-radius:8px;
+    background:#0e1218;
+    color:#e8edf5;
+    box-shadow:0 8px 28px #0009;
+    font-size:12px;
+    line-height:1.5;
+    pointer-events:none;
+  }
+  .helpPopover[hidden]{display:none}
+  .colTip:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+
+  @media(max-width:960px){
+    .wrap{display:block;min-height:100vh}
+    aside{
+      max-height:none;
+      overflow:visible;
+      border-right:0;
+      border-bottom:1px solid var(--border);
+    }
+    .settingsScroll{
+      overflow:visible;
+      flex:none;
+      min-height:auto;
+      padding-right:0;
+    }
+    main{min-height:72vh}
+    canvas{max-height:70vh}
+  }
+
+  @media(max-width:900px){
+    .assetHeader{display:none}
+    .assetRow{
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      grid-template-areas:
+        "preview meta meta"
+        "group weight minimum"
+        "sizeToggle scale scale"
+        "rotate flip flipRate"
+        "stats stats stats";
+      gap:9px 10px;
+      align-items:center;
+      padding:10px;
+    }
+    .assetPreview{grid-area:preview;justify-self:start}
+    .assetMeta{grid-area:meta;align-self:center}
+    .assetGroup{grid-area:group}
+    .assetWeight{grid-area:weight}
+    .assetMinCount{grid-area:minimum}
+    .assetSizeToggle{grid-area:sizeToggle}
+    .assetScale{grid-area:scale}
+    .assetRotate{grid-area:rotate}
+    .assetFlip{grid-area:flip}
+    .assetFlipRate{grid-area:flipRate}
+    .assetStats{grid-area:stats}
+
+    .assetGroup,.assetWeight,.assetMinCount,.assetSizeToggle,.assetScale,
+    .assetRotate,.assetFlip,.assetFlipRate,.assetStats{
+      position:relative;
+      padding-top:16px;
+    }
+    .assetGroup::before,.assetWeight::before,.assetMinCount::before,.assetSizeToggle::before,
+    .assetScale::before,.assetRotate::before,.assetFlip::before,.assetFlipRate::before,
+    .assetStats::before{
+      content:attr(data-mobile-label);
+      position:absolute;
+      left:0;
+      top:0;
+      color:var(--muted);
+      font-size:9px;
+      line-height:1;
+      white-space:nowrap;
+    }
+    .assetSizeToggle,.assetRotate,.assetFlip{
+      justify-content:flex-start;
+      min-height:38px;
+    }
+    .assetStats{
+      min-height:42px;
+      padding:18px 8px 8px;
+      border-radius:7px;
+      background:#10151d;
+      white-space:normal;
+    }
+    .sizePreview{
+      flex-wrap:nowrap;
+      overflow-x:auto;
+      overflow-y:hidden;
+      min-height:104px;
+      scrollbar-width:thin;
+    }
+    .sizePreviewItem{flex:0 0 auto}
+  }
+
+  @media(max-width:680px){
+    aside{padding:14px}
+    .titleRow{align-items:flex-start;gap:8px}
+    .languageControl{font-size:10px}
+    .footerToolbar{align-items:stretch;flex-direction:column}
+    .toolGroup{width:100%}
+    .toolGroup .toolAction{flex:1}
+    .exportTools{margin-left:0}
+    .topbar{
+      height:auto;
+      min-height:54px;
+      gap:8px;
+      align-items:flex-start;
+      padding:10px 12px;
+      flex-direction:column;
+    }
+    .status{padding-left:0}
+  }
+
+  @media(max-width:520px){
+    .assetRow{
+      grid-template-columns:1fr 1fr;
+      grid-template-areas:
+        "preview meta"
+        "group weight"
+        "minimum minimum"
+        "sizeToggle scale"
+        "rotate flip"
+        "flipRate flipRate"
+        "stats stats";
+    }
+    .row{grid-template-columns:1fr;gap:5px}
+    .rangeRow{grid-template-columns:minmax(0,1fr) 68px}
+    .thumbs.compact .thumb{flex-basis:82px;width:82px;height:82px}
+    .thumbs.compact{height:96px;min-height:96px;flex-basis:96px}
+  }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside>
+    <div class="titleRow">
+      <h1>Seamless Scatter Maker</h1>
+      <div class="languageControl" aria-label="Language">
+        <span class="languageLabel">Language:</span>
+        <button id="langJa" class="langChoice" type="button">日本語</button>
+        <span class="languageSep">/</span>
+        <button id="langEn" class="langChoice" type="button">English</button>
+      </div>
+    </div>
+    <div class="hint"><span data-i18n="intro">透過PNGを複数読み込んで、ランダム配置したシームレス素材を作ります。処理はブラウザ内だけで完結します。</span></div>
+
+    <div id="drop" class="drop">
+      <strong data-i18n="dropTitle">PNG / SVGをドロップ</strong><br>
+      <span style="font-size:12px;color:#9aa6b2" data-i18n="dropSub">またはクリックして選択</span>
+      <input id="fileInput" type="file" accept="image/png,image/webp,image/jpeg,image/svg+xml,.svg" multiple>
+    </div>
+    <div id="thumbs" class="thumbs"></div>
+    <div class="settingsScroll">
+
+
+    <div id="assetControls" class="section" style="margin-top:10px;padding-top:10px;display:none">
+      <div class="assetPanelTitle" data-i18n="assetSettings">素材ごとの設定</div>
+      <div class="assetHeader">
+        <div></div>
+        <div class="colHead"><span data-i18n="asset">素材</span><span class="colTip" data-i18n-title="tipAsset" title="読み込んだ画像素材です。">?</span></div>
+        <div class="colHead"><span data-i18n="group">グループ</span><span class="colTip" data-i18n-title="tipGroup" title="メインは先に均等配置、サブはその後で隙間に配置します。">?</span></div>
+        <div class="colHead"><span data-i18n="weight">重み</span><span class="colTip" data-i18n-title="tipWeight" title="同じグループ内での出現比率です。数値が大きいほど多く配置されます。">?</span></div>
+        <div class="colHead"><span data-i18n="minimum">最低</span><span class="colTip" data-i18n-title="tipMinimum" title="この素材を最低でも何個置くかを指定します。">?</span></div>
+        <div class="headBulk" data-i18n-title="tipSizeBulk" title="素材ごとの個別サイズ倍率を一括でON/OFFします。"><button id="sizeAllOn" type="button" data-i18n="allOn">全ON</button><button id="sizeAllOff" type="button" data-i18n="allOff">全OFF</button></div>
+        <div class="colHead"><span data-i18n="scalePct">倍率%</span><span class="colTip" data-i18n-title="tipScale" title="サイズ変更ON時に使う素材固有のサイズ倍率です。">?</span></div>
+        <div class="headBulk" data-i18n-title="tipRotateBulk" title="回転を素材ごとに一括ON/OFFします。"><button id="rotateAllOn" type="button" data-i18n="allOn">全ON</button><button id="rotateAllOff" type="button" data-i18n="allOff">全OFF</button></div>
+        <div class="headBulk" data-i18n-title="tipFlipBulk" title="左右反転を素材ごとに一括ON/OFFします。"><button id="flipAllOn" type="button" data-i18n="allOn">全ON</button><button id="flipAllOff" type="button" data-i18n="allOff">全OFF</button></div>
+        <div class="colHead"><span data-i18n="flipPct">反転率%</span><span class="colTip" data-i18n-title="tipFlipPct" title="左右反転する確率です。50なら約半分が反転します。">?</span></div>
+        <div class="colHead"><span data-i18n="placementStats">配置数</span><span class="colTip" data-i18n-title="tipPlacementStats" title="目標配置数・実際の配置数・おおよその出力サイズです。目標比率はグループ設定も反映します。">?</span></div>
+      </div>
+      <div id="assetList" class="assetList"></div>
+      <div class="miniNote" data-i18n="weightNote">「重み」は出現しやすさです。サイズ変更OFFは固定100%、ONの素材だけ指定倍率を使います。</div>
+      <div class="sizePreviewWrap">
+        <div class="sizePreviewTitle" data-i18n="sizePreview">サイズ比率プレビュー</div>
+        <div id="sizePreview" class="sizePreview"></div>
+      </div>
+    </div>
+
+
+      <div class="section">
+        <div class="assetPanelTitle" data-i18n="groupPlacement">グループ配置</div>
+        <div class="row">
+          <label data-i18n="mainShare">メイン割合 (%)</label>
+          <div class="rangeRow">
+            <input id="mainShare" type="range" min="0" max="100" value="30">
+            <input id="mainShareNum" type="number" min="0" max="100" value="30">
+          </div>
+        </div>
+        <div class="hint" style="margin-top:-4px;margin-bottom:0">
+          <span data-i18n="groupHint">メイン素材を先に全体へ均等配置し、その後サブ素材を空いた場所へ配置します。主役にしたい素材をメイン、装飾や補助的な素材をサブにすると使いやすいです。</span>
+        </div>
+        <div id="groupShareState" class="groupShareState" hidden></div>
+      </div>
+
+    <div class="section">
+      <div class="row">
+        <label data-i18n="canvasSize">キャンバスサイズ</label>
+        <select id="size">
+          <option>512</option>
+          <option>1024</option>
+          <option selected>2048</option>
+          <option>4096</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label data-i18n="placementMode">配置方式</label>
+        <select id="mode">
+          <option value="balanced" selected data-i18n="modeBalanced">均等ランダム</option>
+          <option value="fill" data-i18n="modeFill">空白を埋める</option>
+          <option value="random" data-i18n="modeRandom">完全ランダム</option>
+          <option value="grid" data-i18n="modeGrid">グリッド整列</option>
+          <option value="offset" data-i18n="modeOffset">互い違い整列</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label data-i18n="targetCount">目標配置数</label>
+        <input id="count" type="number" min="1" max="300" value="30">
+      </div>
+      <div class="hint" style="margin-top:-4px;margin-bottom:0"><span data-i18n="countHint">※ ランダム系は大きい素材から配置します。最低保証は必要なら間隔条件を緩めて必ず置きます。整列モードでは目標数に近い格子数へ自動調整します。</span></div>
+
+      <div class="row">
+        <label data-i18n="maxRotation">最大回転角</label>
+        <input id="rotation" type="number" min="0" max="180" value="180">
+      </div>
+      <label class="check" style="margin-top:-2px;margin-bottom:8px">
+        <input id="disableRotation" type="checkbox"> <span data-i18n="disableRotation">回転を全体で無効化（強制0°）</span>
+      </label>
+      <div class="row">
+        <label data-i18n="paddingDensity">余白 / 密集度</label>
+        <div class="rangeRow">
+          <input id="padding" type="range" min="0" max="100" value="18">
+          <input id="paddingNum" type="number" min="0" max="100" value="18">
+        </div>
+      </div>
+      <div class="row">
+        <label data-i18n="mainUniformity">メイン均一さ</label>
+        <div class="rangeRow">
+          <input id="mainUniformity" type="range" min="0" max="100" value="80">
+          <input id="mainUniformityNum" type="number" min="0" max="100" value="80">
+        </div>
+      </div>
+      <div class="row">
+        <label data-i18n="subUniformity">サブ均一さ</label>
+        <div class="rangeRow">
+          <input id="subUniformity" type="range" min="0" max="100" value="55">
+          <input id="subUniformityNum" type="number" min="0" max="100" value="55">
+        </div>
+      </div>
+      <div class="hint" style="margin-top:-4px;margin-bottom:0"><span data-i18n="uniformityHint">※ メインは高めで全体へ均等に、サブは低めで隙間に自然に散らす設定が使いやすいです。</span></div>
+      <div class="row">
+        <label data-i18n="tries">試行回数</label>
+        <input id="tries" type="number" min="1" max="400" value="120">
+      </div>
+      <div class="row">
+        <label data-i18n="randomSeed">ランダムシード</label>
+        <input id="seed" type="text" value="">
+      </div>
+
+      <label class="check"><input id="avoidOverlap" type="checkbox" checked> <span data-i18n="avoidOverlap">なるべく重ならないようにする</span></label>
+      <div class="hint" style="margin-top:8px;margin-bottom:0" data-i18n="flipHint">左右反転は素材ごとに設定できます。</div>
+    </div>
+    </div><!-- settingsScroll -->
+
+    <div class="footerButtons footerCompact">
+      <button id="generate" class="action primary actionGenerate" data-i18n="generate">生成</button>
+
+      <div class="footerToolbar">
+        <div class="toolGroup">
+          <button id="randomSeed" class="action toolAction" data-i18n="seedBtn" data-i18n-title="seedBtnTip" title="ランダム配置のシードを変更">シード</button>
+          <button id="undoBtn" class="action toolAction" data-i18n="undoBtn" data-i18n-title="undoTip" title="元に戻す（Ctrl+Z）">↶ 戻す</button>
+          <button id="redoBtn" class="action toolAction" data-i18n="redoBtn" data-i18n-title="redoTip" title="やり直し（Ctrl+Y）">↷ やり直し</button>
+        </div>
+        <div class="toolGroup exportTools">
+          <button id="download" class="action toolAction exportPrimary" data-i18n="pngExport">PNG書き出し</button>
+        </div>
+      </div>
+
+      <button id="clear" class="clearLink" type="button" data-i18n="clearAll">素材をすべてクリア</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div><span data-i18n="preview">プレビュー</span> <span style="font-size:11px;color:var(--muted)" data-i18n="dragHint">（配置後は画像をドラッグして微調整できます）</span></div>
+      <div id="status" class="status" data-i18n="addAssetsStatus">素材を追加してください</div>
+    </div>
+    <div class="canvasWrap">
+      <canvas id="canvas" width="2048" height="2048"></canvas>
+    </div>
+  </main>
+</div>
+<div id="helpPopover" class="helpPopover" role="tooltip" hidden></div>
+
+<script>
+
+const I18N = {
+  ja: {
+    intro:'PNG・SVGなどの画像素材を複数読み込んで、ランダム配置したシームレス素材を作ります。処理はブラウザ内だけで完結します。',
+    dropTitle:'PNG / SVGをドロップ', dropSub:'またはクリックして選択', assetSettings:'素材ごとの設定',
+    asset:'素材', group:'グループ', weight:'重み', minimum:'最低', scalePct:'倍率%', flipPct:'反転率%', placementStats:'配置数',
+    allOn:'全ON', allOff:'全OFF', weightNote:'「重み」は出現しやすさです。サイズ変更OFFは固定100%、ONの素材だけ指定倍率を使います。',
+    sizePreview:'サイズ比率プレビュー', groupPlacement:'グループ配置', mainShare:'メイン割合 (%)',
+    groupHint:'メイン素材を先に全体へ均等配置し、その後サブ素材を空いた場所へ配置します。主役にしたい素材をメイン、装飾や補助的な素材をサブにすると使いやすいです。',
+    canvasSize:'キャンバスサイズ', placementMode:'配置方式', modeBalanced:'均等ランダム', modeFill:'空白を埋める', modeRandom:'完全ランダム',
+    modeGrid:'グリッド整列', modeOffset:'互い違い整列', targetCount:'目標配置数',
+    countHint:'※ ランダム系は大きい素材から配置します。最低保証は必要なら間隔条件を緩めて必ず置きます。整列モードでは目標数に近い格子数へ自動調整します。',
+    maxRotation:'最大回転角', disableRotation:'回転を全体で無効化（強制0°）', paddingDensity:'余白 / 密集度',
+    mainUniformity:'メイン均一さ', subUniformity:'サブ均一さ',
+    uniformityHint:'※ メインは高めで全体へ均等に、サブは低めで隙間に自然に散らす設定が使いやすいです。',
+    tries:'試行回数', randomSeed:'ランダムシード', avoidOverlap:'なるべく重ならないようにする', flipHint:'左右反転は素材ごとに設定できます。',
+    generate:'生成', seedBtn:'シード', undoBtn:'↶ 戻す', redoBtn:'↷ やり直し', pngExport:'PNG書き出し', clearAll:'素材をすべてクリア',
+    preview:'プレビュー', dragHint:'（配置後は画像をドラッグして微調整できます）', addAssetsStatus:'素材を追加してください',
+    tipAsset:'読み込んだ画像素材です。', tipGroup:'メインは先に均等配置、サブはその後で隙間に配置します。',
+    tipWeight:'同じグループ内での出現比率です。数値が大きいほど多く配置されます。', tipMinimum:'この素材を最低でも何個置くかを指定します。',
+    tipScale:'サイズ変更ON時に使う素材固有のサイズ倍率です。', tipFlipPct:'左右反転する確率です。50なら約半分が反転します。',
+    tipPlacementStats:'目標配置数・実際の配置数・おおよその出力サイズです。目標比率はグループ設定も反映します。',
+    tipSizeBulk:'素材ごとの個別サイズ倍率を一括でON/OFFします。', tipRotateBulk:'回転を素材ごとに一括ON/OFFします。',
+    tipFlipBulk:'左右反転を素材ごとに一括ON/OFFします。', seedBtnTip:'ランダム配置のシードを変更',
+    undoTip:'元に戻す（Ctrl+Z）', redoTip:'やり直し（Ctrl+Y）',
+    main:'メイン', sub:'サブ', ratioWithin:'内', overall:'全体', target:'目標', actual:'実際', approx:'約',
+    delete:'削除', ratio:'比率', minGuarantee:'最低保証数', size:'サイズ', rotate:'回転', flip:'反転',
+    weightTitle:'重み', sizeToggleTip:'この素材だけ個別のサイズ倍率を使う', sizeScaleTip:'サイズ変更ON時の固定倍率 (%)',
+    flipRateTip:'左右反転率 (%)', materialUnit:'素材', placedUnit:'個配置',
+    undoStatus:'元に戻しました', redoStatus:'やり直しました', movedStatus:'位置を調整しました',
+    addAssetsAlert:'先にPNGまたはSVG素材を追加してください。', modeGridLabel:'グリッド整列', modeOffsetLabel:'互い違い整列',
+    balancedLabel:'均等ランダム', fillLabel:'空白を埋める', randomLabel:'完全ランダム',
+    inputTarget:'入力目標', uniformity:'均一さ', rotationOff:'回転OFF', sequenceEven:'素材順も均等周期',
+    autoFit:'個をセル内へ自動縮小', svgLoadError:'SVGを読み込めませんでした', imageLoadError:'画像を読み込めませんでした',
+    svgTooLarge:'SVGファイルが大きすぎます（5MBまで）。', groupShareInactive:'メインとサブの両方があるときだけ「メイン割合」を使います。',
+    assetRemovedReset:'素材を削除しました。配置を再生成してください。', nothingToExport:'先に生成してください。',
+    pngExportError:'PNG書き出しに失敗しました。'
+  },
+  en: {
+    intro:'Load PNG, SVG, and other image assets and scatter them into a seamless tile. All processing stays in your browser.',
+    dropTitle:'Drop PNG / SVG files here', dropSub:'or click to choose files', assetSettings:'Per-asset settings',
+    asset:'Asset', group:'Group', weight:'Weight', minimum:'Min', scalePct:'Scale %', flipPct:'Flip %', placementStats:'Placement',
+    allOn:'All ON', allOff:'All OFF', weightNote:'Weight controls relative frequency. Size OFF uses a fixed 100%; only assets with Size ON use their custom scale.',
+    sizePreview:'Size ratio preview', groupPlacement:'Group placement', mainShare:'Main share (%)',
+    groupHint:'Main assets are distributed across the canvas first, then Sub assets fill the remaining space. Use Main for focal assets and Sub for decorative or supporting assets.',
+    canvasSize:'Canvas size', placementMode:'Placement mode', modeBalanced:'Balanced random', modeFill:'Fill gaps', modeRandom:'Fully random',
+    modeGrid:'Grid', modeOffset:'Offset grid', targetCount:'Target count',
+    countHint:'Random modes place larger assets first. Minimum counts are guaranteed by relaxing spacing when needed. Grid modes automatically choose a grid close to the target count.',
+    maxRotation:'Max rotation', disableRotation:'Disable all rotation (force 0°)', paddingDensity:'Spacing / density',
+    mainUniformity:'Main uniformity', subUniformity:'Sub uniformity',
+    uniformityHint:'Higher Main uniformity spreads focal assets more evenly; lower Sub uniformity lets supporting assets fill gaps more naturally.',
+    tries:'Placement attempts', randomSeed:'Random seed', avoidOverlap:'Avoid overlap when possible', flipHint:'Horizontal flip can be set per asset.',
+    generate:'Generate', seedBtn:'Seed', undoBtn:'↶ Undo', redoBtn:'↷ Redo', pngExport:'Export PNG', clearAll:'Clear all assets',
+    preview:'Preview', dragHint:'(drag placed images to fine-tune)', addAssetsStatus:'Add some assets to begin',
+    tipAsset:'An imported image asset.', tipGroup:'Main assets are distributed first; Sub assets are placed into remaining gaps.',
+    tipWeight:'Relative frequency within the same group. Larger values appear more often.', tipMinimum:'Minimum number of copies of this asset.',
+    tipScale:'Per-asset scale used when Size is enabled.', tipFlipPct:'Chance of horizontal flipping. 50 means roughly half.',
+    tipPlacementStats:'Target count, actual count, and approximate output size. Group settings are included in target ratios.',
+    tipSizeBulk:'Turn per-asset custom sizing ON/OFF for all assets.', tipRotateBulk:'Turn rotation ON/OFF for all assets.',
+    tipFlipBulk:'Turn horizontal flipping ON/OFF for all assets.', seedBtnTip:'Change the random placement seed',
+    undoTip:'Undo (Ctrl+Z)', redoTip:'Redo (Ctrl+Y)',
+    main:'Main', sub:'Sub', ratioWithin:'within', overall:'overall', target:'Target', actual:'Actual', approx:'Approx.',
+    delete:'Delete', ratio:'Ratio', minGuarantee:'Minimum count', size:'Size', rotate:'Rotate', flip:'Flip',
+    weightTitle:'Weight', sizeToggleTip:'Use a custom size scale for this asset', sizeScaleTip:'Fixed scale when Size is ON (%)',
+    flipRateTip:'Horizontal flip chance (%)', materialUnit:'assets', placedUnit:'placed',
+    undoStatus:'Undone', redoStatus:'Redone', movedStatus:'Position adjusted',
+    addAssetsAlert:'Add PNG or SVG assets first.', modeGridLabel:'Grid', modeOffsetLabel:'Offset grid',
+    balancedLabel:'Balanced random', fillLabel:'Fill gaps', randomLabel:'Fully random',
+    inputTarget:'input target', uniformity:'uniformity', rotationOff:'rotation OFF', sequenceEven:'even asset sequence',
+    autoFit:'auto-fit to cells', svgLoadError:'Could not load SVG', imageLoadError:'Could not load image',
+    svgTooLarge:'SVG file is too large (5 MB max).', groupShareInactive:'Main share is used only when both Main and Sub assets exist.',
+    assetRemovedReset:'Asset removed. Generate again to refresh the placement.', nothingToExport:'Generate a pattern first.',
+    pngExportError:'Could not export PNG.'
+  }
+};
+
+let currentLang = localStorage.getItem('ssm-lang') === 'en' ? 'en' : 'ja';
+function t(key){ return I18N[currentLang][key] ?? I18N.ja[key] ?? key; }
+
+let activeHelpTip = null;
+
+function closeHelpTip(){
+  if(!helpPopoverEl) return;
+  helpPopoverEl.hidden = true;
+  activeHelpTip?.setAttribute('aria-expanded','false');
+  activeHelpTip = null;
+}
+
+function positionHelpTip(el){
+  if(!helpPopoverEl || helpPopoverEl.hidden || !el) return;
+  const r = el.getBoundingClientRect();
+  const width = Math.min(290, window.innerWidth - 24);
+  let left = r.left + r.width / 2;
+  left = Math.max(width / 2 + 8, Math.min(window.innerWidth - width / 2 - 8, left));
+
+  helpPopoverEl.style.width = `${width}px`;
+  helpPopoverEl.style.left = `${left}px`;
+  helpPopoverEl.style.transform = 'translateX(-50%)';
+
+  const below = r.bottom + 8;
+  const estimatedHeight = helpPopoverEl.offsetHeight || 70;
+  if(below + estimatedHeight < window.innerHeight - 8){
+    helpPopoverEl.style.top = `${below}px`;
+  }else{
+    helpPopoverEl.style.top = `${Math.max(8, r.top - estimatedHeight - 8)}px`;
+  }
+}
+
+function openHelpTip(el){
+  if(!helpPopoverEl || !el) return;
+  if(activeHelpTip === el && !helpPopoverEl.hidden){
+    closeHelpTip();
+    return;
+  }
+  activeHelpTip?.setAttribute('aria-expanded','false');
+  activeHelpTip = el;
+  el.setAttribute('aria-expanded','true');
+  helpPopoverEl.textContent = el.title || '';
+  helpPopoverEl.hidden = false;
+  requestAnimationFrame(()=>positionHelpTip(el));
+}
+
+function refreshOpenHelpTip(){
+  if(activeHelpTip && helpPopoverEl && !helpPopoverEl.hidden){
+    helpPopoverEl.textContent = activeHelpTip.title || '';
+    requestAnimationFrame(()=>positionHelpTip(activeHelpTip));
+  }
+}
+
+function setupHelpTips(){
+  document.querySelectorAll('.colTip').forEach(el=>{
+    el.tabIndex = 0;
+    el.setAttribute('role','button');
+    el.setAttribute('aria-expanded','false');
+    el.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      openHelpTip(el);
+    });
+    el.addEventListener('keydown',e=>{
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        openHelpTip(el);
+      }else if(e.key === 'Escape'){
+        closeHelpTip();
+      }
+    });
+  });
+
+  document.addEventListener('click',e=>{
+    if(activeHelpTip && !e.target.closest('.colTip')) closeHelpTip();
+  });
+  window.addEventListener('resize',()=>activeHelpTip && positionHelpTip(activeHelpTip));
+  window.addEventListener('scroll',()=>activeHelpTip && positionHelpTip(activeHelpTip), true);
+}
+
+function applyLanguage(){
+  document.documentElement.lang = currentLang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.dataset.i18n;
+    if(I18N[currentLang][key] != null) el.textContent = I18N[currentLang][key];
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>{
+    const key = el.dataset.i18nTitle;
+    if(I18N[currentLang][key] != null) el.title = I18N[currentLang][key];
+  });
+  if(langJaEl) langJaEl.disabled = currentLang === 'ja';
+  if(langEnEl) langEnEl.disabled = currentLang === 'en';
+  renderAssets();
+  updateAssetStats();
+  renderSizePreview();
+  updateGroupControlAvailability();
+  refreshOpenHelpTip();
+}
+
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('fileInput');
+const thumbs = document.getElementById('thumbs');
+const assetControls = document.getElementById('assetControls');
+const assetList = document.getElementById('assetList');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const statusEl = document.getElementById('status');
+const langJaEl = document.getElementById('langJa');
+const langEnEl = document.getElementById('langEn');
+
+const sizeEl = document.getElementById('size');
+const modeEl = document.getElementById('mode');
+const countEl = document.getElementById('count');
+const rotationEl = document.getElementById('rotation');
+const paddingEl = document.getElementById('padding');
+const paddingNumEl = document.getElementById('paddingNum');
+const mainUniformityEl = document.getElementById('mainUniformity');
+const mainUniformityNumEl = document.getElementById('mainUniformityNum');
+const subUniformityEl = document.getElementById('subUniformity');
+const subUniformityNumEl = document.getElementById('subUniformityNum');
+const triesEl = document.getElementById('tries');
+const seedEl = document.getElementById('seed');
+const avoidOverlapEl = document.getElementById('avoidOverlap');
+const disableRotationEl = document.getElementById('disableRotation');
+const sizePreviewEl = document.getElementById('sizePreview');
+const mainShareEl = document.getElementById('mainShare');
+const mainShareNumEl = document.getElementById('mainShareNum');
+const groupShareStateEl = document.getElementById('groupShareState');
+const helpPopoverEl = document.getElementById('helpPopover');
+
+let assets = [];
+let currentPlacements = [];
+let undoStack = [];
+let redoStack = [];
+const HISTORY_LIMIT = 50;
+
+function clonePlacements(list){
+  return list.map(p => ({...p}));
+}
+
+function pushUndoSnapshot(snapshot){
+  undoStack.push(clonePlacements(snapshot));
+  if(undoStack.length > HISTORY_LIMIT) undoStack.shift();
+  redoStack = [];
+}
+
+function setPlacementsWithHistory(next){
+  pushUndoSnapshot(currentPlacements);
+  currentPlacements = clonePlacements(next);
+  renderCurrentPlacements();
+}
+
+function undo(){
+  if(!undoStack.length) return;
+  redoStack.push(clonePlacements(currentPlacements));
+  currentPlacements = undoStack.pop();
+  renderCurrentPlacements();
+  statusEl.textContent = `${t('undoStatus')}・${currentPlacements.length} ${t('placedUnit')}`;
+}
+
+function redo(){
+  if(!redoStack.length) return;
+  undoStack.push(clonePlacements(currentPlacements));
+  currentPlacements = redoStack.pop();
+  renderCurrentPlacements();
+  statusEl.textContent = `${t('redoStatus')}・${currentPlacements.length} ${t('placedUnit')}`;
+}
+
+function invalidatePlacementState(statusMessage=''){
+  currentPlacements = [];
+  undoStack = [];
+  redoStack = [];
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if(statusMessage) statusEl.textContent = statusMessage;
+}
+
+function updateGroupControlAvailability(){
+  const hasMain = assets.some(a=>a.group === 'main');
+  const hasSub = assets.some(a=>a.group !== 'main');
+  const hasBoth = hasMain && hasSub;
+
+  mainShareEl.disabled = !hasBoth;
+  mainShareNumEl.disabled = !hasBoth;
+
+  mainUniformityEl.disabled = !hasMain;
+  mainUniformityNumEl.disabled = !hasMain;
+  subUniformityEl.disabled = !hasSub;
+  subUniformityNumEl.disabled = !hasSub;
+
+  if(groupShareStateEl){
+    groupShareStateEl.hidden = assets.length === 0 || hasBoth;
+    groupShareStateEl.textContent = t('groupShareInactive');
+  }
+}
+
+
+function syncRotationDisabledState(){
+  rotationEl.disabled = disableRotationEl.checked;
+}
+disableRotationEl.addEventListener('change', syncRotationDisabledState);
+syncRotationDisabledState();
+
+langJaEl.addEventListener('click',()=>{
+  if(currentLang === 'ja') return;
+  currentLang = 'ja';
+  localStorage.setItem('ssm-lang', currentLang);
+  applyLanguage();
+});
+langEnEl.addEventListener('click',()=>{
+  if(currentLang === 'en') return;
+  currentLang = 'en';
+  localStorage.setItem('ssm-lang', currentLang);
+  applyLanguage();
+});
+
+
+
+function xmur3(str){
+  let h = 1779033703 ^ str.length;
+  for(let i = 0; i < str.length; i++){
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = h << 13 | h >>> 19;
+  }
+  return function(){
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return (h ^= h >>> 16) >>> 0;
+  }
+}
+function mulberry32(a){
+  return function(){
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+function seededRandom(seedText){
+  const s = xmur3(seedText)();
+  return mulberry32(s);
+}
+
+function syncRangeAndNumber(rangeEl, numEl){
+  rangeEl.addEventListener('input',()=>numEl.value = rangeEl.value);
+  numEl.addEventListener('input',()=>rangeEl.value = numEl.value);
+}
+syncRangeAndNumber(paddingEl, paddingNumEl);
+syncRangeAndNumber(mainUniformityEl, mainUniformityNumEl);
+syncRangeAndNumber(subUniformityEl, subUniformityNumEl);
+syncRangeAndNumber(mainShareEl, mainShareNumEl);
+
+if(seedEl && !seedEl.value){
+  seedEl.value = `seed-${Math.random().toString(36).slice(2,10)}`;
+}
+
+
+function totalWeight(){
+  return assets.reduce((sum, a) => sum + Math.max(0, Number(a.weight ?? 0)), 0);
+}
+
+function getMinGuarantee(asset){
+  return Math.max(0, Math.floor(Number(asset.minCount ?? 0) || 0));
+}
+
+function computeTargetCounts(totalCount){
+  if(!assets.length) return [];
+  const mins = assets.map(a => getMinGuarantee(a));
+  const minSum = mins.reduce((s, v) => s + v, 0);
+  const effectiveTotal = Math.max(totalCount, minSum);
+
+  const remaining = effectiveTotal - minSum;
+  const weights = assets.map(a => Math.max(0, Number(a.weight ?? 0)));
+  const total = weights.reduce((s, v) => s + v, 0);
+
+  let ratios;
+  if(total <= 0){
+    ratios = assets.map(() => 1 / assets.length);
+  }else{
+    ratios = weights.map(w => w / total);
+  }
+
+  const raw = ratios.map(r => r * remaining);
+  const ints = raw.map(v => Math.floor(v));
+  let remain = remaining - ints.reduce((s, v) => s + v, 0);
+
+  const order = raw.map((v, i) => ({i, frac: v - Math.floor(v)}))
+                   .sort((a, b) => b.frac - a.frac);
+
+  for(let k = 0; k < remain; k++){
+    ints[order[k % order.length].i] += 1;
+  }
+
+  return mins.map((m, i) => m + ints[i]);
+}
+
+
+function distributeCountByIndices(totalCount, indices){
+  const result = Array(assets.length).fill(0);
+  if(totalCount <= 0 || !indices.length) return result;
+
+  const mins = indices.map(i => getMinGuarantee(assets[i]));
+  const minSum = mins.reduce((s,v)=>s+v,0);
+  const effective = Math.max(totalCount, minSum);
+  const remaining = effective - minSum;
+
+  const weights = indices.map(i => Math.max(0, Number(assets[i].weight ?? 0)));
+  const weightSum = weights.reduce((s,v)=>s+v,0);
+  const ratios = weightSum > 0
+    ? weights.map(w=>w/weightSum)
+    : weights.map(()=>1/weights.length);
+
+  const raw = ratios.map(r=>r*remaining);
+  const adds = raw.map(v=>Math.floor(v));
+  let rem = remaining - adds.reduce((s,v)=>s+v,0);
+
+  raw.map((v,j)=>({j, frac:v-Math.floor(v)}))
+     .sort((a,b)=>b.frac-a.frac)
+     .slice(0,rem)
+     .forEach(o=>adds[o.j]++);
+
+  indices.forEach((idx,j)=>{
+    result[idx] = mins[j] + adds[j];
+  });
+  return result;
+}
+
+function computeGroupedTargetCounts(totalCount){
+  const mainIndices = assets.map((a,i)=>a.group === 'main' ? i : -1).filter(i=>i>=0);
+  const subIndices = assets.map((a,i)=>a.group !== 'main' ? i : -1).filter(i=>i>=0);
+
+  if(!mainIndices.length || !subIndices.length){
+    return computeTargetCounts(totalCount);
+  }
+
+  const share = Math.max(0, Math.min(100, Number(mainShareEl.value || 30))) / 100;
+  let mainCount = Math.round(totalCount * share);
+  let subCount = totalCount - mainCount;
+
+  const mainMin = mainIndices.reduce((s,i)=>s+getMinGuarantee(assets[i]),0);
+  const subMin = subIndices.reduce((s,i)=>s+getMinGuarantee(assets[i]),0);
+
+  mainCount = Math.max(mainCount, mainMin);
+  subCount = Math.max(subCount, subMin);
+
+  const effectiveTotal = Math.max(totalCount, mainCount + subCount);
+  if(mainCount + subCount < effectiveTotal){
+    subCount += effectiveTotal - (mainCount + subCount);
+  }
+
+  const mainTargets = distributeCountByIndices(mainCount, mainIndices);
+  const subTargets = distributeCountByIndices(subCount, subIndices);
+  return mainTargets.map((v,i)=>v + subTargets[i]);
+}
+
+function getPlacementProfile(totalCount){
+  const targets = computeGroupedTargetCounts(totalCount);
+  const effectiveTotal = targets.reduce((s,v)=>s+v,0);
+
+  const groupTotals = {main:0, sub:0};
+  targets.forEach((n,i)=>{
+    const g = assets[i]?.group === 'main' ? 'main' : 'sub';
+    groupTotals[g] += n;
+  });
+
+  return {targets, effectiveTotal, groupTotals};
+}
+
+function getEffectiveTargetCount(totalCount){
+  return getPlacementProfile(totalCount).effectiveTotal;
+}
+
+function ratioOfAssetWithinGroup(index){
+  if(!assets[index]) return 0;
+  const group = assets[index].group === 'main' ? 'main' : 'sub';
+  const indices = assets.map((a,i)=>(a.group === 'main' ? 'main' : 'sub') === group ? i : -1).filter(i=>i>=0);
+  const sum = indices.reduce((s,i)=>s + Math.max(0, Number(assets[i].weight ?? 0)), 0);
+  if(sum <= 0) return indices.length ? 1 / indices.length : 0;
+  return Math.max(0, Number(assets[index].weight ?? 0)) / sum;
+}
+
+function estimateAssetPriority(asset){
+  const aspect = asset.img.naturalWidth / asset.img.naturalHeight;
+  const scale = asset.sizeOverride === true
+    ? Math.max(0.01, Number(asset.sizeScalePct ?? 100) / 100)
+    : 1;
+  let w = scale, h = scale;
+  if(aspect >= 1) h = w / aspect;
+  else w = h * aspect;
+  return Math.max(w, h);
+}
+
+function buildPlacementPlan(targetCounts, rnd){
+  const plan = [];
+  for(let i = 0; i < assets.length; i++){
+    const priority = estimateAssetPriority(assets[i]);
+    for(let n = 0; n < (targetCounts[i] || 0); n++){
+      plan.push({ assetIndex: i, priority, jitter: rnd() });
+    }
+  }
+  plan.sort((a, b) => {
+    if(b.priority !== a.priority) return b.priority - a.priority;
+    return a.jitter - b.jitter;
+  });
+  return plan.map(v => v.assetIndex);
+}
+
+function assetPixelSize(asset){
+  const S = parseInt(sizeEl.value || 2048, 10);
+  const baseRef = S * 0.18;
+  const scale = asset.sizeOverride === true
+    ? Math.max(0.01, Number(asset.sizeScalePct ?? 100) / 100)
+    : 1;
+  const aspect = asset.img.naturalWidth / asset.img.naturalHeight;
+  let w, h;
+  if(aspect >= 1){
+    w = baseRef * scale;
+    h = w / aspect;
+  }else{
+    h = baseRef * scale;
+    w = h * aspect;
+  }
+  return {w:Math.round(w), h:Math.round(h)};
+}
+
+function updateAssetStats(actualCounts = null, targetCounts = null){
+  if(!assets.length) return;
+
+  const inputTarget = Math.max(1, parseInt(countEl.value || 1, 10));
+  const profile = getPlacementProfile(inputTarget);
+  const targets = targetCounts || profile.targets;
+  const effectiveTotal = targets.reduce((s,v)=>s+v,0);
+
+  const groupTotals = {main:0, sub:0};
+  targets.forEach((n,i)=>{
+    const g = assets[i].group === 'main' ? 'main' : 'sub';
+    groupTotals[g] += n;
+  });
+
+  assets.forEach((a, i) => {
+    const ratioText = document.getElementById(`assetRatioText_${i}`);
+    const statsText = document.getElementById(`assetStats_${i}`);
+    const actual = actualCounts ? (actualCounts.get(i) || 0) : 0;
+    const px = assetPixelSize(a);
+
+    const group = a.group === 'main' ? 'main' : 'sub';
+    const withinGroup = groupTotals[group] > 0 ? (targets[i] || 0) / groupTotals[group] : ratioOfAssetWithinGroup(i);
+    const overall = effectiveTotal > 0 ? (targets[i] || 0) / effectiveTotal : 0;
+
+    if(ratioText){
+      ratioText.textContent = `${group === 'main' ? t('main') : t('sub')} ${t('ratioWithin')} ${(withinGroup*100).toFixed(1)}% / ${t('overall')} ${(overall*100).toFixed(1)}%`;
+      ratioText.title = currentLang === 'ja' ? '実際の目標配置数から計算した比率です。' : 'Ratio calculated from the actual target placement counts.';
+    }
+    if(statsText){
+      statsText.innerHTML = `${t('target')} ${targets[i] || 0}<br>${t('actual')} ${actual}<br>${t('approx')} ${px.w}×${px.h}px`;
+    }
+  });
+}
+
+
+function renderSizePreview(){
+  if(!sizePreviewEl) return;
+  sizePreviewEl.innerHTML = '';
+  if(!assets.length) return;
+
+  const sizes = assets.map(assetPixelSize);
+  const maxW = Math.max(...sizes.map(s=>s.w), 1);
+  const maxH = Math.max(...sizes.map(s=>s.h), 1);
+
+  // すべて同じ縮尺で表示する
+  const commonScale = Math.min(78 / maxW, 68 / maxH);
+
+  assets.forEach((a, i) => {
+    const item = document.createElement('div');
+    item.className = 'sizePreviewItem';
+
+    const box = document.createElement('div');
+    box.className = 'sizePreviewBox';
+
+    const img = document.createElement('img');
+    img.src = a.url;
+    img.style.width = `${Math.max(6, sizes[i].w * commonScale)}px`;
+    img.style.height = `${Math.max(6, sizes[i].h * commonScale)}px`;
+    img.style.maxWidth = 'none';
+    img.style.maxHeight = 'none';
+    img.style.objectFit = 'fill';
+    box.appendChild(img);
+
+    const label = document.createElement('div');
+    label.className = 'sizePreviewLabel';
+    const scaleText = a.sizeOverride === true ? `${a.sizeScalePct ?? 100}%` : '100%';
+    label.textContent = `${a.name} / ${scaleText} / ${t('approx')} ${sizes[i].w}×${sizes[i].h}px`;
+    label.title = label.textContent;
+
+    item.append(box, label);
+    sizePreviewEl.appendChild(item);
+  });
+}
+
+function renderAssets(){
+  thumbs.innerHTML = '';
+  assetList.innerHTML = '';
+  thumbs.classList.toggle('compact', assets.length >= 5);
+
+  if(!assets.length){
+    assetControls.style.display = 'none';
+    updateGroupControlAvailability();
+    return;
+  }
+  assetControls.style.display = 'block';
+
+  assets.forEach((a, i) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'thumb';
+
+    const ti = document.createElement('img');
+    ti.src = a.url;
+
+    const tb = document.createElement('button');
+    tb.textContent = '×';
+    tb.title = t('delete');
+    tb.onclick = (e) => {
+      e.stopPropagation();
+      URL.revokeObjectURL(assets[i].url);
+      assets.splice(i, 1);
+      invalidatePlacementState(t('assetRemovedReset'));
+      renderAssets();
+      updateAssetStats();
+      renderSizePreview();
+      updateGroupControlAvailability();
+    };
+
+    thumb.append(ti, tb);
+    thumbs.appendChild(thumb);
+
+    const row = document.createElement('div');
+    row.className = 'assetRow';
+
+    const pv = document.createElement('div');
+    pv.className = 'assetPreview';
+    const img = document.createElement('img');
+    img.src = a.url;
+    pv.appendChild(img);
+
+    const meta = document.createElement('div');
+    meta.className = 'assetMeta';
+    const name = document.createElement('div');
+    name.className = 'assetName';
+    name.textContent = a.name;
+    const sub = document.createElement('div');
+    sub.className = 'assetSub';
+    sub.id = `assetRatioText_${i}`;
+    sub.textContent = `${t('ratio')} 0%`;
+    meta.append(name, sub);
+
+    const groupWrap = document.createElement('div');
+    groupWrap.className = 'assetGroup';
+    const groupSelect = document.createElement('select');
+    const optMain = document.createElement('option');
+    optMain.value = 'main';
+    optMain.textContent = t('main');
+    const optSub = document.createElement('option');
+    optSub.value = 'sub';
+    optSub.textContent = t('sub');
+    groupSelect.append(optMain, optSub);
+    groupSelect.value = a.group ?? 'main';
+    groupSelect.onchange = () => {
+      a.group = groupSelect.value;
+      updateGroupControlAvailability();
+      updateAssetStats();
+    };
+    groupWrap.appendChild(groupSelect);
+    groupWrap.dataset.mobileLabel = t('group');
+
+    const w = document.createElement('div');
+    w.className = 'assetWeight';
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '0';
+    input.step = '0.1';
+    input.value = a.weight ?? 1;
+    input.title = t('weightTitle');
+    input.oninput = () => {
+      const v = parseFloat(input.value);
+      a.weight = Number.isFinite(v) && v >= 0 ? v : 0;
+      updateAssetStats();
+    };
+    w.appendChild(input);
+    w.dataset.mobileLabel = t('weight');
+
+    const minCountWrap = document.createElement('div');
+    minCountWrap.className = 'assetMinCount';
+    const minCountInput = document.createElement('input');
+    minCountInput.type = 'number';
+    minCountInput.min = '0';
+    minCountInput.step = '1';
+    minCountInput.value = a.minCount ?? 0;
+    minCountInput.title = t('minGuarantee');
+    minCountInput.oninput = () => {
+      const v = parseInt(minCountInput.value || 0, 10);
+      a.minCount = Number.isFinite(v) && v >= 0 ? v : 0;
+      updateAssetStats();
+    };
+    minCountWrap.appendChild(minCountInput);
+    minCountWrap.dataset.mobileLabel = t('minimum');
+
+    const sizeToggleWrap = document.createElement('label');
+    sizeToggleWrap.className = 'assetSizeToggle';
+    sizeToggleWrap.title = t('sizeToggleTip');
+    const sizeToggle = document.createElement('input');
+    sizeToggle.type = 'checkbox';
+    sizeToggle.checked = a.sizeOverride === true;
+    sizeToggle.onchange = () => {
+      a.sizeOverride = sizeToggle.checked;
+      scaleInput.disabled = !sizeToggle.checked;
+      renderSizePreview();
+    };
+    const sizeToggleText = document.createElement('span');
+    sizeToggleText.textContent = t('size');
+    sizeToggleWrap.append(sizeToggle, sizeToggleText);
+    sizeToggleWrap.dataset.mobileLabel = t('size');
+
+    const scaleWrap = document.createElement('div');
+    scaleWrap.className = 'assetScale';
+    const scaleInput = document.createElement('input');
+    scaleInput.type = 'number';
+    scaleInput.min = '1';
+    scaleInput.max = '500';
+    scaleInput.step = '1';
+    scaleInput.value = a.sizeScalePct ?? 100;
+    scaleInput.title = t('sizeScaleTip');
+    scaleInput.disabled = a.sizeOverride !== true;
+    scaleInput.oninput = () => {
+      const v = parseFloat(scaleInput.value);
+      a.sizeScalePct = Number.isFinite(v) && v > 0 ? v : 100;
+      renderSizePreview();
+    };
+    scaleWrap.appendChild(scaleInput);
+    scaleWrap.dataset.mobileLabel = t('scalePct');
+
+    const rotateWrap = document.createElement('label');
+    rotateWrap.className = 'assetRotate';
+    const rotateCheck = document.createElement('input');
+    rotateCheck.type = 'checkbox';
+    rotateCheck.checked = a.rotateEnabled !== false;
+    rotateCheck.dataset.assetIndex = i;
+    rotateCheck.className = 'assetRotateCheck';
+    rotateCheck.onchange = () => {
+      a.rotateEnabled = rotateCheck.checked;
+    };
+    const rotateText = document.createElement('span');
+    rotateText.textContent = t('rotate');
+    rotateWrap.append(rotateCheck, rotateText);
+    rotateWrap.dataset.mobileLabel = t('rotate');
+
+    const flipWrap = document.createElement('label');
+    flipWrap.className = 'assetFlip';
+    const flipCheck = document.createElement('input');
+    flipCheck.type = 'checkbox';
+    flipCheck.checked = a.flipEnabled !== false;
+    flipCheck.dataset.assetIndex = i;
+    flipCheck.className = 'assetFlipCheck';
+    flipCheck.onchange = () => {
+      a.flipEnabled = flipCheck.checked;
+    };
+    const flipText = document.createElement('span');
+    flipText.textContent = t('flip');
+    flipWrap.append(flipCheck, flipText);
+    flipWrap.dataset.mobileLabel = t('flip');
+
+    const flipRateWrap = document.createElement('div');
+    flipRateWrap.className = 'assetFlipRate';
+    const flipRateInput = document.createElement('input');
+    flipRateInput.type = 'number';
+    flipRateInput.min = '0';
+    flipRateInput.max = '100';
+    flipRateInput.step = '1';
+    flipRateInput.value = a.flipRate ?? 50;
+    flipRateInput.title = t('flipRateTip');
+    flipRateInput.oninput = () => {
+      let v = parseFloat(flipRateInput.value);
+      if(!Number.isFinite(v)) v = 50;
+      a.flipRate = Math.max(0, Math.min(100, v));
+    };
+    flipRateWrap.appendChild(flipRateInput);
+    flipRateWrap.dataset.mobileLabel = t('flipPct');
+
+    const stats = document.createElement('div');
+    stats.className = 'assetStats';
+    stats.id = `assetStats_${i}`;
+    stats.dataset.mobileLabel = t('placementStats');
+    stats.innerHTML = `${t('target')} 0<br>${t('actual')} 0<br>${t('approx')} 0×0px`;
+
+    row.append(pv, meta, groupWrap, w, minCountWrap, sizeToggleWrap, scaleWrap, rotateWrap, flipWrap, flipRateWrap, stats);
+    assetList.appendChild(row);
+  });
+
+  updateAssetStats();
+  renderSizePreview();
+  updateGroupControlAvailability();
+}
+
+drop.addEventListener('click',()=>fileInput.click());
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{
+  e.preventDefault();
+  drop.classList.remove('drag');
+  handleFiles([...e.dataTransfer.files]);
+});
+fileInput.addEventListener('change',()=>handleFiles([...fileInput.files]));
+countEl.addEventListener('input',()=>updateAssetStats());
+sizeEl.addEventListener('change',()=>{ updateAssetStats(); renderSizePreview(); });
+mainShareEl.addEventListener('input',()=>updateAssetStats());
+mainShareNumEl.addEventListener('input',()=>updateAssetStats());
+
+function isSvgFile(file){
+  return file.type === 'image/svg+xml' || /\.svg$/i.test(file.name);
+}
+
+const MAX_SVG_BYTES = 5 * 1024 * 1024;
+const MAX_SVG_INTRINSIC = 4096;
+
+function sanitizeCssText(css){
+  return String(css || '')
+    .replace(/@import[^;]+;/gi, '')
+    .replace(/expression\s*\([^)]*\)/gi, '')
+    .replace(/javascript\s*:/gi, '')
+    .replace(/url\s*\(\s*(['"]?)(.*?)\1\s*\)/gi, (m, q, ref)=>{
+      const value = String(ref || '').trim();
+      return value.startsWith('#') ? `url(${value})` : 'none';
+    });
+}
+
+function parseSvgNumber(value){
+  if(value == null) return null;
+  const m = String(value).trim().match(/^([0-9]*\.?[0-9]+)(?:px)?$/i);
+  if(!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function sanitizeSvgText(text){
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(text, 'image/svg+xml');
+
+  if(doc.querySelector('parsererror')){
+    throw new Error(t('svgLoadError'));
+  }
+
+  // Keep SVG deterministic and non-executable.
+  doc.querySelectorAll(
+    'script, foreignObject, iframe, object, embed, audio, video, canvas, animate, animateMotion, animateTransform, set'
+  ).forEach(el=>el.remove());
+
+  const urlAttrs = new Set([
+    'fill','stroke','filter','clip-path','mask',
+    'marker-start','marker-mid','marker-end','cursor'
+  ]);
+
+  doc.querySelectorAll('*').forEach(el=>{
+    for(const attr of [...el.attributes]){
+      const name = attr.name.toLowerCase();
+      const value = attr.value.trim();
+
+      if(name.startsWith('on') || /javascript\s*:/i.test(value)){
+        el.removeAttribute(attr.name);
+        continue;
+      }
+
+      if(name === 'href' || name === 'xlink:href'){
+        const fragmentRef = value.startsWith('#');
+        const embeddedRaster = /^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(value);
+        if(!fragmentRef && !embeddedRaster) el.removeAttribute(attr.name);
+        continue;
+      }
+
+      if(name === 'style'){
+        const clean = sanitizeCssText(value);
+        if(clean.trim()) el.setAttribute(attr.name, clean);
+        else el.removeAttribute(attr.name);
+        continue;
+      }
+
+      if(urlAttrs.has(name) && /url\s*\(/i.test(value)){
+        const clean = sanitizeCssText(value);
+        if(clean.includes('none') && !clean.includes('url(#')){
+          el.removeAttribute(attr.name);
+        }else{
+          el.setAttribute(attr.name, clean);
+        }
+      }
+    }
+  });
+
+  doc.querySelectorAll('style').forEach(styleEl=>{
+    styleEl.textContent = sanitizeCssText(styleEl.textContent || '');
+  });
+
+  const root = doc.documentElement;
+  if(!root || root.nodeName.toLowerCase() !== 'svg'){
+    throw new Error(t('svgLoadError'));
+  }
+
+  const vb = root.getAttribute('viewBox');
+  let vbNums = null;
+  if(vb){
+    const nums = vb.trim().split(/[\s,]+/).map(Number);
+    if(nums.length === 4 && nums.every(Number.isFinite) && nums[2] > 0 && nums[3] > 0){
+      vbNums = nums;
+    }
+  }
+
+  let intrinsicW = vbNums ? vbNums[2] : parseSvgNumber(root.getAttribute('width'));
+  let intrinsicH = vbNums ? vbNums[3] : parseSvgNumber(root.getAttribute('height'));
+
+  if(!intrinsicW) intrinsicW = 1024;
+  if(!intrinsicH) intrinsicH = 1024;
+
+  const fit = Math.min(1, MAX_SVG_INTRINSIC / intrinsicW, MAX_SVG_INTRINSIC / intrinsicH);
+  const safeW = Math.max(1, Math.round(intrinsicW * fit));
+  const safeH = Math.max(1, Math.round(intrinsicH * fit));
+
+  if(!vbNums){
+    root.setAttribute('viewBox', `0 0 ${intrinsicW} ${intrinsicH}`);
+  }
+  root.setAttribute('width', String(safeW));
+  root.setAttribute('height', String(safeH));
+
+  return new XMLSerializer().serializeToString(doc);
+}
+
+async function makeAssetUrl(file){
+  if(!isSvgFile(file)) return URL.createObjectURL(file);
+  if(file.size > MAX_SVG_BYTES) throw new Error(t('svgTooLarge'));
+
+  const raw = await file.text();
+  const safeSvg = sanitizeSvgText(raw);
+  const blob = new Blob([safeSvg], {type:'image/svg+xml;charset=utf-8'});
+  return URL.createObjectURL(blob);
+}
+
+async function handleFiles(files){
+  const imgs = files.filter(f =>
+    f.type.startsWith('image/') || /\.svg$/i.test(f.name)
+  );
+
+  for(const file of imgs){
+    let url = null;
+    try{
+      url = await makeAssetUrl(file);
+      const img = new Image();
+      await new Promise((res, rej)=>{
+        img.onload = res;
+        img.onerror = () => rej(new Error(isSvgFile(file) ? t('svgLoadError') : t('imageLoadError')));
+        img.src = url;
+      });
+
+      assets.push({
+        name:file.name,
+        img,
+        url,
+        weight:1,
+        minCount:0,
+        sizeOverride:false,
+        sizeScalePct:100,
+        rotateEnabled:true,
+        flipEnabled:true,
+        flipRate:50,
+        group:'main'
+      });
+    }catch(err){
+      if(url) URL.revokeObjectURL(url);
+      console.error(err);
+      alert(`${file.name}: ${err?.message || t('imageLoadError')}`);
+    }
+  }
+
+  renderAssets();
+  updateAssetStats();
+  renderSizePreview();
+  statusEl.textContent = `${assets.length} ${t('materialUnit')}`;
+}
+
+function torusDelta(a, b, size){
+  const d = Math.abs(a - b);
+  return Math.min(d, size - d);
+}
+function torusDistance(x1, y1, x2, y2, size){
+  return Math.hypot(torusDelta(x1, x2, size), torusDelta(y1, y2, size));
+}
+
+/*
+  r = 見た目上の占有半径（衝突判定用）
+  densityR = 周辺密度を感じる半径
+  sameTypeR = 同種素材どうしで近づきにくくする半径
+*/
+function clearanceToBoxes(c, boxes, size){
+  if(!boxes.length) return Infinity;
+  let best = Infinity;
+  for(const b of boxes){
+    const d = torusDistance(c.x, c.y, b.cx, b.cy, size);
+    const need = c.r + b.r + Math.max(c.gap, b.gap);
+    const clearance = d - need;
+    if(clearance < best) best = clearance;
+  }
+  return best;
+}
+
+function localDensityPenalty(c, boxes, size){
+  if(!boxes.length) return 0;
+  let score = 0;
+  for(const b of boxes){
+    const d = torusDistance(c.x, c.y, b.cx, b.cy, size);
+    const influence = c.densityR + b.densityR;
+    if(d < influence){
+      const t = 1 - (d / influence);
+      score += t * t;
+    }
+  }
+  return score;
+}
+
+function localSameTypePenalty(c, boxes, size){
+  if(!boxes.length) return 0;
+  let score = 0;
+  for(const b of boxes){
+    if(b.assetIndex !== c.assetIndex) continue;
+    const d = torusDistance(c.x, c.y, b.cx, b.cy, size);
+    const influence = c.sameTypeR + b.sameTypeR;
+    if(d < influence){
+      const t = 1 - (d / influence);
+      score += t * t;
+    }
+  }
+  return score;
+}
+
+function nearestSameTypeDistance(c, boxes, size){
+  let best = Infinity;
+  for(const b of boxes){
+    if(b.assetIndex !== c.assetIndex) continue;
+    const d = torusDistance(c.x, c.y, b.cx, b.cy, size);
+    if(d < best) best = d;
+  }
+  return best;
+}
+
+function drawWrappedTo(targetCtx, W, H, img, cx, cy, w, h, angle, flipX){
+  const c = Math.abs(Math.cos(angle));
+  const s = Math.abs(Math.sin(angle));
+  const halfW = (w * c + h * s) / 2;
+  const halfH = (w * s + h * c) / 2;
+
+  const offsetsX = [0];
+  const offsetsY = [0];
+  if(cx - halfW < 0) offsetsX.push(W);
+  if(cx + halfW > W) offsetsX.push(-W);
+  if(cy - halfH < 0) offsetsY.push(H);
+  if(cy + halfH > H) offsetsY.push(-H);
+
+  for(const ox of offsetsX){
+    for(const oy of offsetsY){
+      targetCtx.save();
+      targetCtx.translate(cx + ox, cy + oy);
+      targetCtx.rotate(angle);
+      targetCtx.scale(flipX ? -1 : 1, 1);
+      targetCtx.drawImage(img, -w/2, -h/2, w, h);
+      targetCtx.restore();
+    }
+  }
+}
+
+function drawWrapped(img, cx, cy, w, h, angle, flipX){
+  drawWrappedTo(ctx, canvas.width, canvas.height, img, cx, cy, w, h, angle, flipX);
+}
+
+function renderCurrentPlacements(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(const p of currentPlacements){
+    const a = assets[p.assetIndex];
+    if(!a) continue;
+    drawWrapped(a.img, p.x, p.y, p.w, p.h, p.angle, p.flipX);
+  }
+}
+
+
+function chooseGridShape(target, requireEvenRows=false){
+  let best = null;
+  const maxCols = Math.max(1, Math.ceil(Math.sqrt(target) * 2.2));
+  for(let cols=1; cols<=maxCols; cols++){
+    for(let rows=1; rows<=maxCols; rows++){
+      if(requireEvenRows && rows % 2 !== 0) continue;
+      const slots = cols * rows;
+      const diff = Math.abs(slots - target);
+      const aspectPenalty = Math.abs(cols - rows) * 0.12;
+      const underPenalty = slots < target ? 0.35 : 0;
+      const score = diff + aspectPenalty + underPenalty;
+      if(!best || score < best.score){
+        best = {cols, rows, slots, score};
+      }
+    }
+  }
+  return best || {cols:1, rows:requireEvenRows ? 2 : 1, slots:requireEvenRows ? 2 : 1};
+}
+
+function buildAssetSequenceForSlots(slotCount, targetCounts, rnd){
+  const counts = [...targetCounts];
+  let total = counts.reduce((s,v)=>s+v,0);
+
+  // 格子数が目標と違うときは、重みの比率を保って再配分
+  if(total !== slotCount){
+    const basis = targetCounts.map(v=>Math.max(0, Number(v || 0)));
+    const basisSum = basis.reduce((s,v)=>s+v,0);
+    counts.fill(0);
+
+    const raw = basisSum > 0
+      ? basis.map(v => v / basisSum * slotCount)
+      : assets.map(() => slotCount / Math.max(1, assets.length));
+    for(let i=0;i<raw.length;i++) counts[i] = Math.floor(raw[i]);
+
+    let rem = slotCount - counts.reduce((s,v)=>s+v,0);
+    raw.map((v,i)=>({i,frac:v-Math.floor(v)}))
+       .sort((a,b)=>b.frac-a.frac)
+       .slice(0,rem)
+       .forEach(o=>counts[o.i]++);
+  }
+
+  // Smooth weighted round-robin:
+  // 各素材をランダムにシャッフルせず、必要個数を全体へ均等に散らす。
+  const used = Array(counts.length).fill(0);
+  const seq = [];
+
+  for(let pos=0; pos<slotCount; pos++){
+    let bestIndex = -1;
+    let bestNeed = -Infinity;
+
+    for(let i=0; i<counts.length; i++){
+      if(used[i] >= counts[i]) continue;
+
+      // この時点までに「理想的には何個出ていてほしいか」
+      const expected = ((pos + 1) * counts[i]) / slotCount;
+      const need = expected - used[i];
+
+      // 同点なら素材番号順にして、シードで並びが崩れないようにする
+      if(need > bestNeed + 1e-9){
+        bestNeed = need;
+        bestIndex = i;
+      }
+    }
+
+    if(bestIndex < 0){
+      bestIndex = counts.findIndex((n,i)=>used[i] < n);
+      if(bestIndex < 0) bestIndex = 0;
+    }
+
+    seq.push(bestIndex);
+    used[bestIndex]++;
+  }
+
+  return seq;
+}
+
+function fitCandidateToCell(c, cellW, cellH, maxRotationRad, globalRotationDisabled){
+  const rotationPossible = !globalRotationDisabled && c.a.rotateEnabled !== false && maxRotationRad > 0.0001;
+
+  // 回転があり得る場合は対角長を安全側の外接サイズとして使う
+  const worstW = rotationPossible ? Math.hypot(c.w, c.h) : c.w;
+  const worstH = rotationPossible ? Math.hypot(c.w, c.h) : c.h;
+
+  const safeW = cellW * 0.72;
+  const safeH = cellH * 0.72;
+  const scale = Math.min(1, safeW / Math.max(1,worstW), safeH / Math.max(1,worstH));
+
+  if(scale < 1){
+    c.w *= scale;
+    c.h *= scale;
+    c.r *= scale;
+    c.gap *= scale;
+    c.densityR *= scale;
+    c.sameTypeR *= scale;
+    return true;
+  }
+  return false;
+}
+
+function countAssetSequence(seq){
+  const counts = Array(assets.length).fill(0);
+  seq.forEach(i => counts[i]++);
+  return counts;
+}
+
+function generate(){
+  if(!assets.length){
+    alert(t('addAssetsAlert'));
+    return;
+  }
+
+  const S = parseInt(sizeEl.value, 10);
+  canvas.width = S;
+  canvas.height = S;
+  ctx.clearRect(0, 0, S, S);
+
+  const mode = modeEl.value;
+  const inputCount = Math.max(1, Math.min(300, parseInt(countEl.value || 1, 10)));
+  const placementProfile = getPlacementProfile(inputCount);
+  const effectiveTarget = placementProfile.effectiveTotal;
+  const maxRot = parseFloat(rotationEl.value || 180) * Math.PI / 180;
+  const padPct = parseFloat(paddingEl.value || 0) / 100;
+  const mainUniformity = parseFloat(mainUniformityEl.value || 80) / 100;
+  const subUniformity = parseFloat(subUniformityEl.value || 55) / 100;
+
+  function uniformityForAssetIndex(assetIndex){
+    return assets[assetIndex].group === 'main' ? mainUniformity : subUniformity;
+  }
+  const tries = Math.max(1, parseInt(triesEl.value || 120, 10));
+  const rnd = seededRandom(seedEl.value || 'seed');
+
+  const boxes = [];
+  const generatedPlacements = [];
+  const placedByAssetIndex = new Map();
+  const placedByAssetQuadrant = new Map();
+  const placedByAssetHalf = new Map(); // {left,right,top,bottom}
+  let placed = 0;
+
+  const baseRef = S * 0.18;
+  const targetCounts = placementProfile.targets;
+  const densityRef = Math.sqrt((S * S) / Math.max(1, effectiveTarget));
+
+  // 同じ素材が一箇所に偏らないための目安距離。
+  // サイズではなく「その素材が何個あるか」を基準にするので、
+  // 小さい月や星も同種同士で固まりにくい。
+  const sameTypeIdealSpacing = targetCounts.map((n, i) => {
+    if(!n || n <= 1) return S * 0.55;
+    const cell = Math.sqrt((S * S) / n);
+    const u = uniformityForAssetIndex(i);
+    return cell * (0.46 + u * 0.20);
+  });
+
+  const groupTargetCounts = {
+    main: assets.reduce((s,a,i)=>s + (a.group === 'main' ? (targetCounts[i]||0) : 0), 0),
+    sub: assets.reduce((s,a,i)=>s + (a.group !== 'main' ? (targetCounts[i]||0) : 0), 0)
+  };
+
+  function groupOfAssetIndex(i){
+    return assets[i].group === 'main' ? 'main' : 'sub';
+  }
+
+  function nearestSameGroupDistance(c){
+    const g = groupOfAssetIndex(c.assetIndex);
+    let best = Infinity;
+    for(const b of boxes){
+      if(groupOfAssetIndex(b.assetIndex) !== g) continue;
+      const d = torusDistance(c.x,c.y,b.cx,b.cy,S);
+      if(d < best) best = d;
+    }
+    return best;
+  }
+
+  function groupSpacingPenalty(c){
+    const g = groupOfAssetIndex(c.assetIndex);
+    const n = Math.max(1, groupTargetCounts[g] || 1);
+    const ideal = Math.sqrt((S*S)/n) * (g === 'main' ? 0.72 : 0.50);
+    const d = nearestSameGroupDistance(c);
+    if(!Number.isFinite(d) || d >= ideal) return 0;
+    const deficit = ideal - d;
+    return (deficit * deficit) / Math.max(1, ideal);
+  }
+
+
+
+  function ensureQuadrantCounts(assetIndex){
+    if(!placedByAssetQuadrant.has(assetIndex)){
+      placedByAssetQuadrant.set(assetIndex, [0,0,0,0]);
+    }
+    return placedByAssetQuadrant.get(assetIndex);
+  }
+
+  function ensureHalfCounts(assetIndex){
+    if(!placedByAssetHalf.has(assetIndex)){
+      placedByAssetHalf.set(assetIndex, {left:0, right:0, top:0, bottom:0});
+    }
+    return placedByAssetHalf.get(assetIndex);
+  }
+
+  function getQuadrantIndex(x, y){
+    const right = x >= S * 0.5 ? 1 : 0;
+    const bottom = y >= S * 0.5 ? 1 : 0;
+    return bottom * 2 + right; // 0:LT 1:RT 2:LB 3:RB
+  }
+
+  function coarseBalancePenalty(c){
+    const target = Math.max(1, targetCounts[c.assetIndex] || 1);
+    const qCounts = ensureQuadrantCounts(c.assetIndex);
+    const hCounts = ensureHalfCounts(c.assetIndex);
+    const q = getQuadrantIndex(c.x, c.y);
+
+    // 4分割の理想数
+    const idealQuadrant = target / 4;
+    const nextQuadrant = qCounts[q] + 1;
+    const quadrantPenalty = Math.max(0, nextQuadrant - idealQuadrant);
+
+    // 左右・上下の理想数
+    const idealHalf = target / 2;
+    const nextLeft  = hCounts.left   + (c.x <  S * 0.5 ? 1 : 0);
+    const nextRight = hCounts.right  + (c.x >= S * 0.5 ? 1 : 0);
+    const nextTop   = hCounts.top    + (c.y <  S * 0.5 ? 1 : 0);
+    const nextBot   = hCounts.bottom + (c.y >= S * 0.5 ? 1 : 0);
+
+    const lrPenalty = Math.max(0, Math.max(nextLeft, nextRight) - idealHalf);
+    const tbPenalty = Math.max(0, Math.max(nextTop, nextBot) - idealHalf);
+
+    // targetが少ない素材ほど少し強めに効かせる
+    const scarcityBoost = Math.min(1.8, 1.15 + 4 / target);
+
+    return (quadrantPenalty * 1.5 + lrPenalty * 1.1 + tbPenalty * 1.1) * scarcityBoost;
+  }
+
+  function makeCandidate(assetIndex, fixedX=null, fixedY=null){
+    const a = assets[assetIndex];
+    const aspect = a.img.naturalWidth / a.img.naturalHeight;
+    const sc = a.sizeOverride === true
+      ? Math.max(0.01, Number(a.sizeScalePct ?? 100) / 100)
+      : 1;
+
+    let w, h;
+    if(aspect >= 1){
+      w = baseRef * sc;
+      h = w / aspect;
+    }else{
+      h = baseRef * sc;
+      w = h * aspect;
+    }
+
+    const x = fixedX === null ? rnd() * S : fixedX;
+    const y = fixedY === null ? rnd() * S : fixedY;
+
+    const visualSize = Math.max(w, h);
+    const u = uniformityForAssetIndex(assetIndex);
+    const r = visualSize * (0.26 + u * 0.08);
+    const gap = Math.min(w, h) * (padPct * (0.45 + u * 0.35));
+    const densityR = visualSize * (0.62 + u * 0.52) + densityRef * (0.04 + u * 0.06);
+    const sameTypeR = visualSize * (0.88 + u * 0.70) + densityRef * (0.05 + u * 0.08);
+
+    return {a, assetIndex, x, y, w, h, r, gap, densityR, sameTypeR};
+  }
+
+  function candidateScore(c, relax=1){
+    const clear = clearanceToBoxes(c, boxes, S);
+    const densityPenalty = localDensityPenalty(c, boxes, S);
+    const sameTypePenalty = localSameTypePenalty(c, boxes, S);
+    const nearestSame = nearestSameTypeDistance(c, boxes, S);
+    const idealSame = sameTypeIdealSpacing[c.assetIndex] || densityRef;
+    const u = uniformityForAssetIndex(c.assetIndex);
+    const areaBiasPenalty = coarseBalancePenalty(c);
+    const groupPenalty = groupSpacingPenalty(c);
+
+    if(avoidOverlapEl.checked && clear < -c.r * (1-relax)) return -Infinity;
+
+    const fitBonus = Math.max(0, Math.min(clear, c.r * 1.4)) / Math.max(1, c.r);
+    const randomness = (rnd() - 0.5) * densityRef * (0.10 + (1-u) * 0.42);
+
+    // 同種が理想距離より近い場合、ピクセル単位で強めに減点。
+    // 以前の小さな無次元ペナルティより効くため、月などの局所密集を防げる。
+    let sameSpacingPenalty = 0;
+    if(Number.isFinite(nearestSame) && nearestSame < idealSame){
+      const deficit = idealSame - nearestSame;
+      sameSpacingPenalty = (deficit * deficit) / Math.max(1, idealSame);
+    }
+
+    if(mode === 'random'){
+      return clear * 0.02
+        + randomness
+        - densityPenalty * 0.42
+        - sameTypePenalty * 0.52
+        - sameSpacingPenalty * 0.40
+        - areaBiasPenalty * 58
+        - groupPenalty * 0.55;
+    }
+
+    if(mode === 'balanced'){
+      return clear * (0.72 + u * 0.30)
+        + fitBonus * (0.62 + u * 0.30)
+        - densityPenalty * (0.60 + u * 0.56)
+        - sameTypePenalty * (0.74 + u * 0.72)
+        - sameSpacingPenalty * (1.00 + u * 0.70)
+        - areaBiasPenalty * (88 + u * 56)
+        - groupPenalty * (1.10 + u * 0.75)
+        + randomness;
+    }
+
+    return clear * (0.90 + u * 0.32)
+      + fitBonus * (0.78 + u * 0.28)
+      - densityPenalty * 0.36
+      - sameTypePenalty * (0.64 + u * 0.48)
+      - sameSpacingPenalty * (0.72 + u * 0.48)
+      - areaBiasPenalty * (62 + u * 40)
+      - groupPenalty * (0.72 + u * 0.50)
+      + randomness;
+  }
+
+  function place(c, forceAngle=null){
+    const angle = forceAngle !== null
+      ? forceAngle
+      : ((disableRotationEl.checked || c.a.rotateEnabled === false) ? 0 : (rnd() * 2 - 1) * maxRot);
+    const localFlipRate = Math.max(0, Math.min(100, Number(c.a.flipRate ?? 50))) / 100;
+    const flipX = c.a.flipEnabled !== false && rnd() < localFlipRate;
+
+    drawWrapped(c.a.img, c.x, c.y, c.w, c.h, angle, flipX);
+
+    generatedPlacements.push({
+      assetIndex:c.assetIndex,
+      x:c.x,
+      y:c.y,
+      w:c.w,
+      h:c.h,
+      angle,
+      flipX
+    });
+
+    boxes.push({
+      assetIndex:c.assetIndex,
+      cx:c.x, cy:c.y, w:c.w, h:c.h, r:c.r, gap:c.gap,
+      densityR:c.densityR, sameTypeR:c.sameTypeR
+    });
+
+    placedByAssetIndex.set(c.assetIndex, (placedByAssetIndex.get(c.assetIndex) || 0) + 1);
+
+    const qCounts = ensureQuadrantCounts(c.assetIndex);
+    qCounts[getQuadrantIndex(c.x, c.y)]++;
+
+    const hCounts = ensureHalfCounts(c.assetIndex);
+    if(c.x < S * 0.5) hCounts.left++; else hCounts.right++;
+    if(c.y < S * 0.5) hCounts.top++; else hCounts.bottom++;
+
+    placed++;
+  }
+
+  function bestCandidate(assetIndex, relax=1, samples=null){
+    let best = null, bestScore = -Infinity;
+    const u = uniformityForAssetIndex(assetIndex);
+    const n = samples || Math.max(30, Math.min(260, Math.round(tries * (1.0 + u))));
+    for(let t=0;t<n;t++){
+      const c = makeCandidate(assetIndex);
+      const score = candidateScore(c, relax);
+      if(score > bestScore){
+        bestScore = score;
+        best = c;
+      }
+    }
+    return best;
+  }
+
+  // ---- exact alignment modes ----
+  if(mode === 'grid' || mode === 'offset'){
+    const shape = chooseGridShape(effectiveTarget, mode === 'offset');
+    const sequence = buildAssetSequenceForSlots(shape.slots, targetCounts, rnd);
+    const dx = S / shape.cols;
+    const dy = S / shape.rows;
+
+    let idx = 0;
+    let autoFitCount = 0;
+    for(let row=0; row<shape.rows; row++){
+      const shift = mode === 'offset' && (row % 2 === 1) ? dx/2 : 0;
+      for(let col=0; col<shape.cols; col++){
+        const assetIndex = sequence[idx++ % sequence.length];
+        const x = ((col + 0.5) * dx + shift) % S;
+        const y = (row + 0.5) * dy;
+        const c = makeCandidate(assetIndex, x, y);
+
+        if(fitCandidateToCell(c, dx, dy, maxRot, disableRotationEl.checked)){
+          autoFitCount++;
+        }
+        place(c);
+      }
+    }
+
+    updateAssetStats(placedByAssetIndex, countAssetSequence(sequence));
+
+    const modeText = mode === 'grid' ? t('modeGridLabel') : t('modeOffsetLabel');
+    statusEl.textContent = `${placed} ${t('placedUnit')}・${shape.cols}×${shape.rows}・${S}×${S}・${modeText}・${t('sequenceEven')}${autoFitCount ? `・${autoFitCount} ${t('autoFit')}` : ''}`;
+    pushUndoSnapshot(currentPlacements);
+    currentPlacements = clonePlacements(generatedPlacements);
+    renderCurrentPlacements();
+    return;
+  }
+
+  // ---- real minimum guarantee pass ----
+  // 大きい保証素材から置く。通常条件→緩和→最後は最良位置へ強制配置。
+  const guaranteed = [];
+  assets.forEach((a,i)=>{
+    const n = getMinGuarantee(a);
+    const priority = estimateAssetPriority(a, 1, 1);
+    for(let k=0;k<n;k++) guaranteed.push({assetIndex:i, priority, jitter:rnd()});
+  });
+  guaranteed.sort((a,b)=>b.priority-a.priority || a.jitter-b.jitter);
+
+  for(const g of guaranteed){
+    let c = bestCandidate(g.assetIndex, 1);
+    if(!c || candidateScore(c,1) === -Infinity) c = bestCandidate(g.assetIndex, 0.75, tries);
+    if(!c || candidateScore(c,0.75) === -Infinity) c = bestCandidate(g.assetIndex, 0.45, tries);
+    if(!c) c = makeCandidate(g.assetIndex);
+    place(c);
+  }
+
+  // ---- remaining target plan: メインを先に全部置き、その後サブで隙間を埋める ----
+  const remainingTargets = targetCounts.map((n,i)=>Math.max(0, n - (placedByAssetIndex.get(i)||0)));
+
+  const mainRemaining = remainingTargets.map((n,i)=>assets[i].group === 'main' ? n : 0);
+  const subRemaining  = remainingTargets.map((n,i)=>assets[i].group !== 'main' ? n : 0);
+
+  const mainPlan = buildPlacementPlan(mainRemaining, rnd);
+  const subPlan  = buildPlacementPlan(subRemaining, rnd);
+
+  function placePlan(plan, isMain){
+    for(const assetIndex of plan){
+      let chosen = null;
+
+      if(mode === 'random'){
+        for(let t=0;t<tries;t++){
+          const c = makeCandidate(assetIndex);
+          if(candidateScore(c,1) > -Infinity){
+            chosen = c;
+            break;
+          }
+        }
+      }else{
+        const samples = isMain ? Math.max(tries, 180) : tries;
+        chosen = bestCandidate(assetIndex, 1, samples);
+        if(chosen && candidateScore(chosen,1) === -Infinity) chosen = null;
+      }
+
+      if(!chosen && mode === 'fill'){
+        chosen = bestCandidate(assetIndex, 0.75, Math.max(tries,160));
+        if(chosen && candidateScore(chosen,0.75) === -Infinity) chosen = null;
+      }
+
+      if(chosen) place(chosen);
+    }
+  }
+
+  placePlan(mainPlan, true);
+  placePlan(subPlan, false);
+
+  updateAssetStats(placedByAssetIndex, targetCounts);
+
+  const modeText = mode === 'balanced' ? t('balancedLabel') : mode === 'fill' ? t('fillLabel') : t('randomLabel');
+  const targetLabel = effectiveTarget !== inputCount
+    ? `${placed}/${effectiveTarget} ${t('placedUnit')} (${t('inputTarget')} ${inputCount})`
+    : `${placed}/${inputCount} ${t('placedUnit')}`;
+
+  const mainPlaced = assets.reduce((s,a,i)=>s + (a.group === 'main' ? (placedByAssetIndex.get(i)||0) : 0), 0);
+  const subPlaced = placed - mainPlaced;
+  statusEl.textContent =
+    `${targetLabel}・${t('main')} ${mainPlaced}/${t('sub')} ${subPlaced}・${S}×${S}・${modeText}・${t('uniformity')} M${Math.round(mainUniformity * 100)}/S${Math.round(subUniformity * 100)}${disableRotationEl.checked ? `・${t('rotationOff')}` : ''}`;
+
+  pushUndoSnapshot(currentPlacements);
+  currentPlacements = clonePlacements(generatedPlacements);
+  renderCurrentPlacements();
+}
+
+
+function signedTorusDelta(value, center, size){
+  let d = value - center;
+  if(d > size/2) d -= size;
+  if(d < -size/2) d += size;
+  return d;
+}
+
+function hitTestPlacement(x,y){
+  for(let i=currentPlacements.length-1; i>=0; i--){
+    const p = currentPlacements[i];
+    let dx = signedTorusDelta(x, p.x, canvas.width);
+    let dy = signedTorusDelta(y, p.y, canvas.height);
+
+    const ca = Math.cos(-p.angle);
+    const sa = Math.sin(-p.angle);
+    const lx = dx * ca - dy * sa;
+    const ly = dx * sa + dy * ca;
+
+    if(Math.abs(lx) <= p.w/2 && Math.abs(ly) <= p.h/2){
+      return i;
+    }
+  }
+  return -1;
+}
+
+function canvasPointFromEvent(e){
+  const r = canvas.getBoundingClientRect();
+  return {
+    x:(e.clientX-r.left) * canvas.width / r.width,
+    y:(e.clientY-r.top) * canvas.height / r.height
+  };
+}
+
+let dragState = null;
+
+canvas.addEventListener('pointerdown', e=>{
+  if(!currentPlacements.length) return;
+  const pt = canvasPointFromEvent(e);
+  const index = hitTestPlacement(pt.x,pt.y);
+  if(index < 0) return;
+
+  const p = currentPlacements[index];
+  dragState = {
+    index,
+    before:clonePlacements(currentPlacements),
+    dx:signedTorusDelta(pt.x,p.x,canvas.width),
+    dy:signedTorusDelta(pt.y,p.y,canvas.height)
+  };
+  canvas.classList.add('dragging');
+  canvas.setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+
+canvas.addEventListener('pointermove', e=>{
+  if(!dragState) return;
+  const pt = canvasPointFromEvent(e);
+  const p = currentPlacements[dragState.index];
+
+  p.x = (pt.x - dragState.dx + canvas.width) % canvas.width;
+  p.y = (pt.y - dragState.dy + canvas.height) % canvas.height;
+  renderCurrentPlacements();
+});
+
+function finishDrag(e){
+  if(!dragState) return;
+  pushUndoSnapshot(dragState.before);
+  canvas.classList.remove('dragging');
+  dragState = null;
+  statusEl.textContent = `${t('movedStatus')}・${currentPlacements.length} ${t('placedUnit')}`;
+}
+
+canvas.addEventListener('pointerup', finishDrag);
+canvas.addEventListener('pointercancel', finishDrag);
+
+document.getElementById('sizeAllOn').addEventListener('click', ()=>{
+  assets.forEach(a => a.sizeOverride = true);
+  document.querySelectorAll('.assetSizeToggle input').forEach(el => el.checked = true);
+  document.querySelectorAll('.assetScale input').forEach(el => el.disabled = false);
+  renderSizePreview();
+});
+document.getElementById('sizeAllOff').addEventListener('click', ()=>{
+  assets.forEach(a => a.sizeOverride = false);
+  document.querySelectorAll('.assetSizeToggle input').forEach(el => el.checked = false);
+  document.querySelectorAll('.assetScale input').forEach(el => el.disabled = true);
+  renderSizePreview();
+});
+
+document.getElementById('rotateAllOn').addEventListener('click', ()=>{
+  assets.forEach(a => a.rotateEnabled = true);
+  document.querySelectorAll('.assetRotateCheck').forEach(el => el.checked = true);
+});
+document.getElementById('rotateAllOff').addEventListener('click', ()=>{
+  assets.forEach(a => a.rotateEnabled = false);
+  document.querySelectorAll('.assetRotateCheck').forEach(el => el.checked = false);
+});
+document.getElementById('flipAllOn').addEventListener('click', ()=>{
+  assets.forEach(a => a.flipEnabled = true);
+  document.querySelectorAll('.assetFlipCheck').forEach(el => el.checked = true);
+});
+document.getElementById('flipAllOff').addEventListener('click', ()=>{
+  assets.forEach(a => a.flipEnabled = false);
+  document.querySelectorAll('.assetFlipCheck').forEach(el => el.checked = false);
+});
+
+
+
+document.getElementById('generate').addEventListener('click', generate);
+document.getElementById('randomSeed').addEventListener('click',()=>{
+  seedEl.value = Math.random().toString(36).slice(2, 10);
+  generate();
+});
+document.getElementById('clear').addEventListener('click',()=>{
+  assets.forEach(a => URL.revokeObjectURL(a.url));
+  assets = [];
+  invalidatePlacementState(t('addAssetsStatus'));
+  renderAssets();
+  updateGroupControlAvailability();
+});
+async function exportPng(){
+  if(!currentPlacements.length){
+    alert(t('nothingToExport'));
+    return;
+  }
+
+  try{
+    const blob = await new Promise((resolve,reject)=>{
+      canvas.toBlob(
+        b => b ? resolve(b) : reject(new Error(t('pngExportError'))),
+        'image/png'
+      );
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.download = `seamless_${canvas.width}x${canvas.height}.png`;
+    a.href = url;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 1500);
+  }catch(err){
+    console.error(err);
+    alert(err?.message || t('pngExportError'));
+  }
+}
+document.getElementById('download').addEventListener('click',exportPng);
+
+document.getElementById('undoBtn').addEventListener('click',undo);
+document.getElementById('redoBtn').addEventListener('click',redo);
+window.addEventListener('keydown',e=>{
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's'){
+    e.preventDefault();
+    document.getElementById('download').click();
+    return;
+  }
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){
+    e.preventDefault();
+    if(e.shiftKey) redo(); else undo();
+    return;
+  }
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y'){
+    e.preventDefault();
+    redo();
+  }
+});
+
+setupHelpTips();
+applyLanguage();
+</script>
+
+<section class="public-content" aria-labelledby="about-title">
+  <!-- ADSENSE_BOTTOM_SLOT_START
+       AdSense承認後、ここに広告ユニットのコードを貼り付けてください。
+       生成ボタンや書き出しボタンのすぐ隣には広告を置かない設計にしています。
+       ADSENSE_BOTTOM_SLOT_END -->
+
+  <div class="public-card">
+    <h2 id="about-title">Seamless Scatter Makerについて</h2>
+    <p>
+      PNG・SVGなどの画像素材を複数読み込み、ランダム配置・グリッド配置・互い違い配置で
+      シームレスなパターン画像を作成できる無料ブラウザツールです。
+    </p>
+    <p>
+      読み込んだ画像は、このツール自身の処理ではサーバーへ送信せず、
+      お使いのブラウザ内で配置・合成・PNG書き出しを行います。
+    </p>
+    <nav class="public-links" aria-label="Site information">
+      <a href="how-to.html">使い方 / How to use</a>
+      <a href="privacy.html">プライバシーポリシー</a>
+      <a href="terms.html">利用規約</a>
+      <a href="contact.html">お問い合わせ</a>
+    </nav>
+  </div>
+</section>
+
+<footer class="public-footer">
+  <div>© <span id="publicYear"></span> Seamless Scatter Maker</div>
+  <div class="public-footer-links">
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms</a>
+    <a href="contact.html">Contact</a>
+  </div>
+</footer>
+<script>
+  document.getElementById('publicYear').textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>
