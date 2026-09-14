@@ -180,6 +180,23 @@
   .settingsScroll::-webkit-scrollbar-track{background:#14181f}
   .row{display:grid;grid-template-columns:1fr 130px;gap:10px;align-items:center;margin:10px 0}
   .row label{font-size:13px;color:#d7dee8}
+  .backgroundSection{min-width:0}
+  .backgroundSection .row{
+    grid-template-columns:minmax(120px,1fr) minmax(180px,260px);
+  }
+  .backgroundSection .row > *,
+  .backgroundSection .rangeRow{
+    min-width:0;
+    max-width:100%;
+  }
+  .backgroundSection label,
+  .backgroundSection .miniNote,
+  .backgroundSection .clearLink{
+    white-space:normal;
+    overflow:visible;
+    overflow-wrap:anywhere;
+    line-height:1.5;
+  }
   input[type=number],input[type=text],select{
     width:100%;background:#10141a;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px
   }
@@ -224,7 +241,7 @@
   .status{font-size:12px;color:var(--muted);padding-left:12px}
   .check{display:flex;align-items:center;gap:8px;font-size:13px}
   .assetPanelTitle{font-size:13px;color:#d7dee8;margin:0 0 8px}
-  #assetControls{--asset-cols:48px minmax(78px,1fr) 68px 48px 48px 58px 58px 52px 52px 58px 90px;}
+  #assetControls{--asset-cols:48px minmax(148px,1fr) 68px 48px 48px 58px 58px 52px 52px 58px 90px;}
   .assetList{display:flex;flex-direction:column;gap:8px}
   .assetHeader{
     display:grid;
@@ -257,9 +274,46 @@
     background:#0f1217;border:1px solid var(--border);border-radius:8px;overflow:hidden
   }
   .assetPreview img{max-width:100%;max-height:100%}
-  .assetMeta{min-width:0}
+  .assetMeta{min-width:0;display:flex;flex-direction:column;gap:2px}
   .assetName{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .assetSub{font-size:11px;color:var(--muted);margin-top:4px}
+  .assetSub{font-size:11px;color:var(--muted);margin-top:2px}
+  .assetMetaOpacity{
+    margin-top:5px;
+    padding-top:5px;
+    border-top:1px solid #2a3442;
+  }
+  .assetMetaOpacityHead{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:6px;
+    margin-bottom:3px;
+    color:var(--muted);
+    font-size:10px;
+    line-height:1;
+  }
+  .assetMetaOpacityControl{
+    display:grid;
+    grid-template-columns:minmax(64px,1fr) 46px;
+    gap:6px;
+    align-items:center;
+  }
+  .assetMetaOpacityControl input[type=range]{
+    width:100%;
+    min-width:0;
+    margin:0;
+  }
+  .assetMetaOpacityControl input[type=number]{
+    width:100%;
+    min-width:0;
+    background:#10141a;
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:7px;
+    padding:4px 4px;
+    text-align:center;
+    font-size:11px;
+  }
   .assetWeight input,.assetMinCount input,.assetScale input{
     width:100%;background:#10141a;color:var(--text);border:1px solid var(--border);
     border-radius:8px;padding:8px 8px
@@ -439,6 +493,16 @@
       overflow:visible;
       border-right:0;
       border-bottom:1px solid var(--border);
+    }
+    .backgroundSection .row{
+      grid-template-columns:1fr;
+      gap:6px;
+      align-items:stretch;
+    }
+    .backgroundSection .row > .toolAction,
+    .backgroundSection .row > select,
+    .backgroundSection .rangeRow{
+      width:100%;
     }
     .settingsScroll{
       overflow:visible;
@@ -683,6 +747,34 @@
         <div id="groupShareState" class="groupShareState" hidden></div>
       </div>
 
+    <div class="section backgroundSection">
+      <div class="assetPanelTitle" data-i18n="backgroundSettings">背景画像</div>
+      <input id="backgroundInput" type="file" accept="image/png,image/webp,image/jpeg,image/svg+xml,image/heic,image/heif,.svg,.heic,.heif" hidden>
+      <div class="row">
+        <label data-i18n="backgroundImage">背景画像</label>
+        <button id="backgroundChoose" class="action toolAction" type="button" data-i18n="backgroundChoose">画像を選択</button>
+      </div>
+      <div id="backgroundName" class="miniNote" data-i18n="backgroundNone">未設定</div>
+      <div class="row">
+        <label data-i18n="backgroundFit">表示方法</label>
+        <select id="backgroundFit">
+          <option value="cover" selected data-i18n="backgroundCover">全面に合わせる</option>
+          <option value="contain" data-i18n="backgroundContain">全体を表示</option>
+          <option value="stretch" data-i18n="backgroundStretch">引き伸ばす</option>
+          <option value="tile" data-i18n="backgroundTile">タイル</option>
+        </select>
+      </div>
+      <div class="row">
+        <label data-i18n="backgroundOpacity">背景の不透明度</label>
+        <div class="rangeRow">
+          <input id="backgroundOpacity" type="range" min="0" max="100" value="100">
+          <input id="backgroundOpacityNum" type="number" min="0" max="100" value="100">
+        </div>
+      </div>
+      <button id="backgroundClear" class="clearLink" type="button" data-i18n="backgroundClear">背景画像を削除</button>
+      <div class="miniNote" data-i18n="backgroundNote">背景画像はプレビューとPNG書き出しに含まれます。素材の配置判定には影響しません。</div>
+    </div>
+
     <div class="section">
       <div class="row">
         <label data-i18n="canvasSize">キャンバスサイズ</label>
@@ -790,10 +882,11 @@ const I18N = {
   ja: {
     intro:'PNG・SVG・HEIC/HEIFなどの画像素材を複数読み込んで、自動でランダム配置したシームレスパターンを作ります。画像処理はブラウザ内だけで完結します。',
     dropTitle:'PNG / SVG / HEICをドロップ', dropSub:'またはクリックして選択', pasteBtn:'📋 切り抜きを貼り付け', pasteHint:'iPhoneの「被写体をコピー」や画像の貼り付けから、透過のまま素材を追加できます。', assetSettings:'素材ごとの設定',
-    asset:'素材', group:'グループ', weight:'重み', minimum:'最低', scalePct:'倍率%', flipPct:'反転率%', placementStats:'配置数',
+    asset:'素材', group:'グループ', weight:'重み', minimum:'最低', scalePct:'倍率%', flipPct:'反転率%', opacityPct:'透明度%', placementStats:'配置数',
     allOn:'全ON', allOff:'全OFF', weightNote:'「重み」は出現しやすさです。サイズ変更OFFは固定100%、ONの素材だけ指定倍率を使います。',
     sizePreview:'サイズ比率プレビュー', groupPlacement:'グループ配置', mainShare:'メイン割合 (%)',
     groupHint:'メイン素材を先に全体へ均等配置し、その後サブ素材を空いた場所へ配置します。主役にしたい素材をメイン、装飾や補助的な素材をサブにすると使いやすいです。',
+    backgroundSettings:'背景画像', backgroundImage:'背景画像', backgroundChoose:'画像を選択', backgroundNone:'未設定', backgroundFit:'表示方法', backgroundCover:'全面に合わせる', backgroundContain:'全体を表示', backgroundStretch:'引き伸ばす', backgroundTile:'タイル', backgroundOpacity:'背景の不透明度', backgroundClear:'背景画像を削除', backgroundNote:'背景画像はプレビューとPNG書き出しに含まれます。素材の配置判定には影響しません。', backgroundLoadError:'背景画像を読み込めませんでした。',
     canvasSize:'キャンバスサイズ', placementMode:'配置方式', modeBalanced:'均等ランダム', modeFill:'空白を埋める', modeRandom:'完全ランダム',
     modeGrid:'グリッド整列', modeOffset:'互い違い整列', targetCount:'目標配置数',
     countHint:'※ ランダム系は大きい素材から配置します。最低保証は必要なら間隔条件を緩めて必ず置きます。整列モードでは目標数に近い格子数へ自動調整します。',
@@ -805,7 +898,7 @@ const I18N = {
     preview:'プレビュー', dragHint:'（ドラッグで移動・ハンドルで拡大縮小/回転・スマホは2本指）', addAssetsStatus:'素材を追加してください',
     tipAsset:'読み込んだ画像素材です。', tipGroup:'メインは先に均等配置、サブはその後で隙間に配置します。',
     tipWeight:'同じグループ内での出現比率です。数値が大きいほど多く配置されます。', tipMinimum:'この素材を最低でも何個置くかを指定します。',
-    tipScale:'サイズ変更ON時に使う素材固有のサイズ倍率です。', tipFlipPct:'左右反転する確率です。50なら約半分が反転します。',
+    tipScale:'サイズ変更ON時に使う素材固有のサイズ倍率です。', tipFlipPct:'左右反転する確率です。50なら約半分が反転します。', tipOpacity:'この素材の不透明度です。100で元の濃さ、0で完全に透明になります。',
     tipPlacementStats:'目標配置数・実際の配置数・おおよその出力サイズです。目標比率はグループ設定も反映します。',
     tipSizeBulk:'素材ごとの個別サイズ倍率を一括でON/OFFします。', tipRotateBulk:'回転を素材ごとに一括ON/OFFします。',
     tipFlipBulk:'左右反転を素材ごとに一括ON/OFFします。', seedBtnTip:'ランダム配置のシードを変更',
@@ -827,10 +920,11 @@ const I18N = {
   en: {
     intro:'Load multiple PNG, SVG, HEIC/HEIF, and other image assets and automatically scatter them into a seamless pattern. Image processing stays in your browser.',
     dropTitle:'Drop PNG / SVG / HEIC files here', dropSub:'or click to choose files', pasteBtn:'📋 Paste cutout', pasteHint:'Add assets with transparency by pasting an image or using iPhone “Copy Subject”.', assetSettings:'Per-asset settings',
-    asset:'Asset', group:'Group', weight:'Weight', minimum:'Min', scalePct:'Scale %', flipPct:'Flip %', placementStats:'Placement',
+    asset:'Asset', group:'Group', weight:'Weight', minimum:'Min', scalePct:'Scale %', flipPct:'Flip %', opacityPct:'Opacity %', placementStats:'Placement',
     allOn:'All ON', allOff:'All OFF', weightNote:'Weight controls relative frequency. Size OFF uses a fixed 100%; only assets with Size ON use their custom scale.',
     sizePreview:'Size ratio preview', groupPlacement:'Group placement', mainShare:'Main share (%)',
     groupHint:'Main assets are distributed across the canvas first, then Sub assets fill the remaining space. Use Main for focal assets and Sub for decorative or supporting assets.',
+    backgroundSettings:'Background image', backgroundImage:'Background image', backgroundChoose:'Choose image', backgroundNone:'Not set', backgroundFit:'Display mode', backgroundCover:'Cover canvas', backgroundContain:'Show whole image', backgroundStretch:'Stretch', backgroundTile:'Tile', backgroundOpacity:'Background opacity', backgroundClear:'Remove background', backgroundNote:'The background is included in the preview and PNG export. It does not affect placement collision checks.', backgroundLoadError:'Could not load the background image.',
     canvasSize:'Canvas size', placementMode:'Placement mode', modeBalanced:'Balanced random', modeFill:'Fill gaps', modeRandom:'Fully random',
     modeGrid:'Grid', modeOffset:'Offset grid', targetCount:'Target count',
     countHint:'Random modes place larger assets first. Minimum counts are guaranteed by relaxing spacing when needed. Grid modes automatically choose a grid close to the target count.',
@@ -842,7 +936,7 @@ const I18N = {
     preview:'Preview', dragHint:'(drag to move, use handles to scale/rotate, or two fingers on mobile)', addAssetsStatus:'Add some assets to begin',
     tipAsset:'An imported image asset.', tipGroup:'Main assets are distributed first; Sub assets are placed into remaining gaps.',
     tipWeight:'Relative frequency within the same group. Larger values appear more often.', tipMinimum:'Minimum number of copies of this asset.',
-    tipScale:'Per-asset scale used when Size is enabled.', tipFlipPct:'Chance of horizontal flipping. 50 means roughly half.',
+    tipScale:'Per-asset scale used when Size is enabled.', tipFlipPct:'Chance of horizontal flipping. 50 means roughly half.', tipOpacity:'Opacity for this asset. 100 is original opacity; 0 is fully transparent.',
     tipPlacementStats:'Target count, actual count, and approximate output size. Group settings are included in target ratios.',
     tipSizeBulk:'Turn per-asset custom sizing ON/OFF for all assets.', tipRotateBulk:'Turn rotation ON/OFF for all assets.',
     tipFlipBulk:'Turn horizontal flipping ON/OFF for all assets.', seedBtnTip:'Change the random placement seed',
@@ -959,12 +1053,22 @@ function applyLanguage(){
   updateAssetStats();
   renderSizePreview();
   updateGroupControlAvailability();
+  if(backgroundNameEl){
+    backgroundNameEl.textContent = backgroundImage ? backgroundFileName : t('backgroundNone');
+  }
   refreshOpenHelpTip();
 }
 
 const drop = document.getElementById('drop');
 const fileInput = document.getElementById('fileInput');
 const pasteBtn = document.getElementById('pasteBtn');
+const backgroundInputEl = document.getElementById('backgroundInput');
+const backgroundChooseEl = document.getElementById('backgroundChoose');
+const backgroundNameEl = document.getElementById('backgroundName');
+const backgroundFitEl = document.getElementById('backgroundFit');
+const backgroundOpacityEl = document.getElementById('backgroundOpacity');
+const backgroundOpacityNumEl = document.getElementById('backgroundOpacityNum');
+const backgroundClearEl = document.getElementById('backgroundClear');
 const thumbs = document.getElementById('thumbs');
 const assetControls = document.getElementById('assetControls');
 const assetList = document.getElementById('assetList');
@@ -995,6 +1099,9 @@ const groupShareStateEl = document.getElementById('groupShareState');
 const helpPopoverEl = document.getElementById('helpPopover');
 
 let assets = [];
+let backgroundImage = null;
+let backgroundUrl = null;
+let backgroundFileName = '';
 let currentPlacements = [];
 let undoStack = [];
 let redoStack = [];
@@ -1113,6 +1220,7 @@ syncRangeAndNumber(paddingEl, paddingNumEl);
 syncRangeAndNumber(mainUniformityEl, mainUniformityNumEl);
 syncRangeAndNumber(subUniformityEl, subUniformityNumEl);
 syncRangeAndNumber(mainShareEl, mainShareNumEl);
+syncRangeAndNumber(backgroundOpacityEl, backgroundOpacityNumEl);
 
 if(seedEl && !seedEl.value){
   seedEl.value = `seed-${Math.random().toString(36).slice(2,10)}`;
@@ -1343,6 +1451,7 @@ function renderSizePreview(){
 
     const img = document.createElement('img');
     img.src = a.url;
+    img.style.opacity = String((a.opacityPct ?? 100) / 100);
     img.style.width = `${Math.max(6, sizes[i].w * commonScale)}px`;
     img.style.height = `${Math.max(6, sizes[i].h * commonScale)}px`;
     img.style.maxWidth = 'none';
@@ -1415,7 +1524,52 @@ function renderAssets(){
     sub.className = 'assetSub';
     sub.id = `assetRatioText_${i}`;
     sub.textContent = `${t('ratio')} 0%`;
-    meta.append(name, sub);
+
+    const opacityInline = document.createElement('div');
+    opacityInline.className = 'assetMetaOpacity';
+    const opacityHead = document.createElement('div');
+    opacityHead.className = 'assetMetaOpacityHead';
+    const opacityLabel = document.createElement('span');
+    opacityLabel.textContent = t('opacityPct');
+    opacityLabel.title = t('tipOpacity');
+    const opacityValue = document.createElement('span');
+    opacityValue.textContent = `${Math.round(a.opacityPct ?? 100)}%`;
+    opacityHead.append(opacityLabel, opacityValue);
+
+    const opacityControl = document.createElement('div');
+    opacityControl.className = 'assetMetaOpacityControl';
+    const opacityRange = document.createElement('input');
+    opacityRange.type = 'range';
+    opacityRange.min = '0';
+    opacityRange.max = '100';
+    opacityRange.step = '1';
+    opacityRange.value = a.opacityPct ?? 100;
+    opacityRange.title = t('tipOpacity');
+    const opacityInput = document.createElement('input');
+    opacityInput.type = 'number';
+    opacityInput.min = '0';
+    opacityInput.max = '100';
+    opacityInput.step = '1';
+    opacityInput.value = a.opacityPct ?? 100;
+    opacityInput.title = t('tipOpacity');
+    const applyOpacityValue = (rawValue) => {
+      let v = parseFloat(rawValue);
+      if(!Number.isFinite(v)) v = 100;
+      a.opacityPct = Math.max(0, Math.min(100, v));
+      opacityRange.value = String(a.opacityPct);
+      opacityInput.value = String(a.opacityPct);
+      opacityValue.textContent = `${Math.round(a.opacityPct)}%`;
+      ti.style.opacity = String(a.opacityPct / 100);
+      img.style.opacity = String(a.opacityPct / 100);
+      renderSizePreview();
+      renderCurrentPlacements();
+    };
+    opacityRange.oninput = () => applyOpacityValue(opacityRange.value);
+    opacityInput.oninput = () => applyOpacityValue(opacityInput.value);
+    opacityControl.append(opacityRange, opacityInput);
+    opacityInline.append(opacityHead, opacityControl);
+
+    meta.append(name, sub, opacityInline);
 
     const groupWrap = document.createElement('div');
     groupWrap.className = 'assetGroup';
@@ -1549,6 +1703,9 @@ function renderAssets(){
     flipRateWrap.appendChild(flipRateInput);
     flipRateWrap.dataset.mobileLabel = t('flipPct');
 
+    ti.style.opacity = String((a.opacityPct ?? 100) / 100);
+    img.style.opacity = String((a.opacityPct ?? 100) / 100);
+
     const stats = document.createElement('div');
     stats.className = 'assetStats';
     stats.id = `assetStats_${i}`;
@@ -1599,6 +1756,12 @@ document.addEventListener('paste', async e=>{
   e.preventDefault();
   await handleFiles(files);
 });
+if(backgroundChooseEl) backgroundChooseEl.addEventListener('click',()=>backgroundInputEl?.click());
+if(backgroundInputEl) backgroundInputEl.addEventListener('change',()=>loadBackgroundFile(backgroundInputEl.files?.[0]));
+if(backgroundClearEl) backgroundClearEl.addEventListener('click', clearBackgroundImage);
+if(backgroundFitEl) backgroundFitEl.addEventListener('change', renderCurrentPlacements);
+if(backgroundOpacityEl) backgroundOpacityEl.addEventListener('input', renderCurrentPlacements);
+if(backgroundOpacityNumEl) backgroundOpacityNumEl.addEventListener('input', renderCurrentPlacements);
 countEl.addEventListener('input',()=>updateAssetStats());
 sizeEl.addEventListener('change',()=>{ updateAssetStats(); renderSizePreview(); });
 mainShareEl.addEventListener('input',()=>updateAssetStats());
@@ -1838,6 +2001,53 @@ async function makeAssetUrl(file){
   return URL.createObjectURL(blob);
 }
 
+async function loadBackgroundFile(file){
+  if(!file) return;
+  let url = null;
+  try{
+    const heic = await isHeicFile(file);
+    let img;
+
+    if(heic){
+      try{
+        url = URL.createObjectURL(file);
+        img = await loadImageFromUrl(url, t('backgroundLoadError'));
+      }catch(_nativeError){
+        if(url) URL.revokeObjectURL(url);
+        url = null;
+        const pngBlob = await convertHeicToPng(file);
+        url = URL.createObjectURL(pngBlob);
+        img = await loadImageFromUrl(url, t('backgroundLoadError'));
+      }
+    }else{
+      url = await makeAssetUrl(file);
+      img = await loadImageFromUrl(url, t('backgroundLoadError'));
+    }
+
+    if(backgroundUrl) URL.revokeObjectURL(backgroundUrl);
+    backgroundImage = img;
+    backgroundUrl = url;
+    backgroundFileName = file.name || '';
+    if(backgroundNameEl) backgroundNameEl.textContent = backgroundFileName || t('backgroundNone');
+    renderCurrentPlacements();
+  }catch(err){
+    if(url) URL.revokeObjectURL(url);
+    console.error(err);
+    alert(`${file.name || t('backgroundImage')}: ${err?.message || t('backgroundLoadError')}`);
+  }finally{
+    if(backgroundInputEl) backgroundInputEl.value = '';
+  }
+}
+
+function clearBackgroundImage(){
+  if(backgroundUrl) URL.revokeObjectURL(backgroundUrl);
+  backgroundImage = null;
+  backgroundUrl = null;
+  backgroundFileName = '';
+  if(backgroundNameEl) backgroundNameEl.textContent = t('backgroundNone');
+  renderCurrentPlacements();
+}
+
 async function handleFiles(files){
   const imgs = files.filter(f =>
     f.type.startsWith('image/') || /\.(?:svg|heic|heif)$/i.test(f.name)
@@ -1885,6 +2095,7 @@ async function handleFiles(files){
         rotateEnabled:true,
         flipEnabled:true,
         flipRate:50,
+        opacityPct:100,
         group:'main'
       });
     }catch(err){
@@ -2163,7 +2374,7 @@ function nearestSameTypeDistance(c, boxes, size){
   return best;
 }
 
-function drawWrappedTo(targetCtx, W, H, img, cx, cy, w, h, angle, flipX){
+function drawWrappedTo(targetCtx, W, H, img, cx, cy, w, h, angle, flipX, opacity=1){
   const c = Math.abs(Math.cos(angle));
   const s = Math.abs(Math.sin(angle));
   const halfW = (w * c + h * s) / 2;
@@ -2179,6 +2390,7 @@ function drawWrappedTo(targetCtx, W, H, img, cx, cy, w, h, angle, flipX){
   for(const ox of offsetsX){
     for(const oy of offsetsY){
       targetCtx.save();
+      targetCtx.globalAlpha = Math.max(0, Math.min(1, Number(opacity) || 0));
       targetCtx.translate(cx + ox, cy + oy);
       targetCtx.rotate(angle);
       targetCtx.scale(flipX ? -1 : 1, 1);
@@ -2188,16 +2400,54 @@ function drawWrappedTo(targetCtx, W, H, img, cx, cy, w, h, angle, flipX){
   }
 }
 
-function drawWrapped(img, cx, cy, w, h, angle, flipX){
-  drawWrappedTo(ctx, canvas.width, canvas.height, img, cx, cy, w, h, angle, flipX);
+function drawWrapped(img, cx, cy, w, h, angle, flipX, opacity=1){
+  drawWrappedTo(ctx, canvas.width, canvas.height, img, cx, cy, w, h, angle, flipX, opacity);
+}
+
+function drawBackgroundTo(targetCtx, W, H){
+  if(!backgroundImage) return;
+
+  const imgW = Math.max(1, backgroundImage.naturalWidth || backgroundImage.width || 1);
+  const imgH = Math.max(1, backgroundImage.naturalHeight || backgroundImage.height || 1);
+  const mode = backgroundFitEl?.value || 'cover';
+  const opacity = Math.max(0, Math.min(100, Number(backgroundOpacityEl?.value ?? 100))) / 100;
+
+  targetCtx.save();
+  targetCtx.globalAlpha = opacity;
+
+  if(mode === 'stretch'){
+    targetCtx.drawImage(backgroundImage, 0, 0, W, H);
+  }else if(mode === 'tile'){
+    // 元画像のピクセルサイズを基準に繰り返す。大きすぎる場合はCanvas内へ収まる程度まで縮小。
+    const fit = Math.min(1, W / imgW, H / imgH);
+    const tileW = Math.max(1, Math.round(imgW * fit));
+    const tileH = Math.max(1, Math.round(imgH * fit));
+    for(let y=0; y<H; y+=tileH){
+      for(let x=0; x<W; x+=tileW){
+        targetCtx.drawImage(backgroundImage, x, y, tileW, tileH);
+      }
+    }
+  }else{
+    const scale = mode === 'contain'
+      ? Math.min(W / imgW, H / imgH)
+      : Math.max(W / imgW, H / imgH);
+    const drawW = imgW * scale;
+    const drawH = imgH * scale;
+    const x = (W - drawW) / 2;
+    const y = (H - drawH) / 2;
+    targetCtx.drawImage(backgroundImage, x, y, drawW, drawH);
+  }
+
+  targetCtx.restore();
 }
 
 function renderCurrentPlacements(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawBackgroundTo(ctx, canvas.width, canvas.height);
   for(const p of currentPlacements){
     const a = assets[p.assetIndex];
     if(!a) continue;
-    drawWrapped(a.img, p.x, p.y, p.w, p.h, p.angle, p.flipX);
+    drawWrapped(a.img, p.x, p.y, p.w, p.h, p.angle, p.flipX, (a.opacityPct ?? 100) / 100);
   }
   drawPlacementSelectionOverlay();
 }
@@ -2667,7 +2917,7 @@ function generate(){
       : (typeof c.angle === 'number' ? c.angle : 0);
     const flipX = typeof c.flipX === 'boolean' ? c.flipX : false;
 
-    drawWrapped(c.a.img, c.x, c.y, c.w, c.h, angle, flipX);
+    drawWrapped(c.a.img, c.x, c.y, c.w, c.h, angle, flipX, (c.a.opacityPct ?? 100) / 100);
 
     generatedPlacements.push({
       assetIndex:c.assetIndex,
@@ -3166,7 +3416,7 @@ document.getElementById('clear').addEventListener('click',()=>{
   updateGroupControlAvailability();
 });
 async function exportPng(){
-  if(!currentPlacements.length){
+  if(!currentPlacements.length && !backgroundImage){
     alert(t('nothingToExport'));
     return;
   }
@@ -3176,10 +3426,11 @@ async function exportPng(){
     exportCanvas.width = canvas.width;
     exportCanvas.height = canvas.height;
     const exportCtx = exportCanvas.getContext('2d');
+    drawBackgroundTo(exportCtx, exportCanvas.width, exportCanvas.height);
     for(const p of currentPlacements){
       const asset = assets[p.assetIndex];
       if(!asset) continue;
-      drawWrappedTo(exportCtx, exportCanvas.width, exportCanvas.height, asset.img, p.x, p.y, p.w, p.h, p.angle, p.flipX);
+      drawWrappedTo(exportCtx, exportCanvas.width, exportCanvas.height, asset.img, p.x, p.y, p.w, p.h, p.angle, p.flipX, (asset.opacityPct ?? 100) / 100);
     }
 
     const blob = await new Promise((resolve,reject)=>{
