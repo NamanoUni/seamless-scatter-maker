@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<meta name="description" content="複数のPNG・SVG画像を自動でランダム配置し、繰り返し使えるシームレスパターンを作成できる無料ブラウザツール。AI不使用・画像ファイルは外部送信せずブラウザ内で処理します。" />
+<meta name="description" content="複数のPNG・SVG・HEIC/HEIF画像を自動でランダム配置し、繰り返し使えるシームレスパターンを作成できる無料ブラウザツール。AI不使用・画像ファイルは外部送信せずブラウザ内で処理します。" />
 <meta name="robots" content="index,follow" />
 <link rel="canonical" href="https://seamless-scatter-maker.pages.dev/" />
 <meta property="og:type" content="website" />
@@ -11,7 +11,7 @@
 <meta property="og:site_name" content="Seamless Scatter Maker" />
 <meta property="og:url" content="https://seamless-scatter-maker.pages.dev/" />
 <meta property="og:title" content="PNG・SVGをランダム配置してシームレスパターンを作る無料ツール | Seamless Scatter Maker" />
-<meta property="og:description" content="複数のPNG・SVG素材を自動で散らしてシームレスパターンを作成。AI不使用・画像ファイルは外部送信せず、ブラウザ内で処理します。" />
+<meta property="og:description" content="複数のPNG・SVG・HEIC/HEIF素材を自動で散らしてシームレスパターンを作成。AI不使用・画像ファイルは外部送信せず、ブラウザ内で処理します。" />
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="PNG・SVGをランダム配置してシームレスパターンを作る無料ツール" />
 <meta name="twitter:description" content="複数画像を自動で散らしてシームレス化。AI不使用・ブラウザ内処理の無料ツール。" />
@@ -28,14 +28,14 @@
       "applicationCategory": "DesignApplication",
       "operatingSystem": "Web",
       "isAccessibleForFree": true,
-      "description": "複数のPNG・SVG画像を自動でランダム配置し、繰り返し使えるシームレスパターンを作成できる無料ブラウザツール。画像処理はブラウザ内で完結します。",
+      "description": "複数のPNG・SVG・HEIC/HEIF画像を自動でランダム配置し、繰り返し使えるシームレスパターンを作成できる無料ブラウザツール。画像処理はブラウザ内で完結します。",
       "offers": {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "JPY"
       },
       "featureList": [
-        "複数のPNG・SVG画像を読み込み",
+        "複数のPNG・SVG・HEIC/HEIF画像を読み込み",
         "ランダム配置・均等配置",
         "シームレスな上下左右の繰り返し",
         "素材ごとの重み・最低配置数・サイズ・回転・左右反転設定",
@@ -51,7 +51,7 @@
           "name": "PNGやSVGはサーバーにアップロードされますか？",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "いいえ。Seamless Scatter MakerはAI生成サービスではなく、画像の配置・合成・書き出しをブラウザ内で処理します。読み込んだPNG・SVGなどの画像ファイルを、当サイトのサーバーやAIサービスへ送信する処理はありません。画像をAIの解析や学習に使用することもありません。"
+            "text": "いいえ。Seamless Scatter MakerはAI生成サービスではなく、画像の配置・合成・書き出しをブラウザ内で処理します。読み込んだPNG・SVG・HEIC/HEIFなどの画像ファイルを、当サイトのサーバーやAIサービスへ送信する処理はありません。画像をAIの解析や学習に使用することもありません。"
           }
         },
         {
@@ -67,7 +67,7 @@
           "name": "複数画像をランダム配置できますか？",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "はい。複数のPNG・SVGなどを同時に読み込み、自動で散らして配置できます。素材ごとに出現しやすさ、最低配置数、サイズ、回転、左右反転なども調整できます。"
+            "text": "はい。複数のPNG・SVG・HEIC/HEIFなどを同時に読み込み、自動で散らして配置できます。素材ごとに出現しやすさ、最低配置数、サイズ、回転、左右反転なども調整できます。"
           }
         },
         {
@@ -611,12 +611,12 @@
         <button id="langEn" class="langChoice" type="button">English</button>
       </div>
     </div>
-    <div class="hint"><span data-i18n="intro">PNG・SVGなどの画像素材を複数読み込んで、自動でランダム配置したシームレスパターンを作ります。画像処理はブラウザ内だけで完結します。</span></div>
+    <div class="hint"><span data-i18n="intro">PNG・SVG・HEIC/HEIFなどの画像素材を複数読み込んで、自動でランダム配置したシームレスパターンを作ります。画像処理はブラウザ内だけで完結します。</span></div>
 
     <div id="drop" class="drop">
-      <strong data-i18n="dropTitle">PNG / SVGをドロップ</strong><br>
+      <strong data-i18n="dropTitle">PNG / SVG / HEICをドロップ</strong><br>
       <span style="font-size:12px;color:#9aa6b2" data-i18n="dropSub">またはクリックして選択</span>
-      <input id="fileInput" type="file" accept="image/png,image/webp,image/jpeg,image/svg+xml,.svg" multiple>
+      <input id="fileInput" type="file" accept="image/png,image/webp,image/jpeg,image/svg+xml,image/heic,image/heif,.svg,.heic,.heif" multiple>
     </div>
     <div id="thumbs" class="thumbs"></div>
     <div class="settingsScroll">
@@ -766,8 +766,8 @@
 
 const I18N = {
   ja: {
-    intro:'PNG・SVGなどの画像素材を複数読み込んで、自動でランダム配置したシームレスパターンを作ります。画像処理はブラウザ内だけで完結します。',
-    dropTitle:'PNG / SVGをドロップ', dropSub:'またはクリックして選択', assetSettings:'素材ごとの設定',
+    intro:'PNG・SVG・HEIC/HEIFなどの画像素材を複数読み込んで、自動でランダム配置したシームレスパターンを作ります。画像処理はブラウザ内だけで完結します。',
+    dropTitle:'PNG / SVG / HEICをドロップ', dropSub:'またはクリックして選択', assetSettings:'素材ごとの設定',
     asset:'素材', group:'グループ', weight:'重み', minimum:'最低', scalePct:'倍率%', flipPct:'反転率%', placementStats:'配置数',
     allOn:'全ON', allOff:'全OFF', weightNote:'「重み」は出現しやすさです。サイズ変更OFFは固定100%、ONの素材だけ指定倍率を使います。',
     sizePreview:'サイズ比率プレビュー', groupPlacement:'グループ配置', mainShare:'メイン割合 (%)',
@@ -796,14 +796,14 @@ const I18N = {
     addAssetsAlert:'先にPNGまたはSVG素材を追加してください。', modeGridLabel:'グリッド整列', modeOffsetLabel:'互い違い整列',
     balancedLabel:'均等ランダム', fillLabel:'空白を埋める', randomLabel:'完全ランダム',
     inputTarget:'入力目標', uniformity:'均一さ', rotationOff:'回転OFF', sequenceEven:'素材順も均等周期',
-    autoFit:'個をセル内へ自動縮小', svgLoadError:'SVGを読み込めませんでした', imageLoadError:'画像を読み込めませんでした',
+    autoFit:'個をセル内へ自動縮小', svgLoadError:'SVGを読み込めませんでした', imageLoadError:'画像を読み込めませんでした', heicLoadError:'HEIC/HEIFを読み込めませんでした', heicDecoderError:'HEIC/HEIF変換機能を読み込めませんでした。通信環境を確認してください。', heicConverting:'HEIC/HEIFを変換中…',
     svgTooLarge:'SVGファイルが大きすぎます（5MBまで）。', groupShareInactive:'メインとサブの両方があるときだけ「メイン割合」を使います。',
     assetRemovedReset:'素材を削除しました。配置を再生成してください。', nothingToExport:'先に生成してください。',
     pngExportError:'PNG書き出しに失敗しました。'
   },
   en: {
-    intro:'Load multiple PNG, SVG, and other image assets and automatically scatter them into a seamless pattern. Image processing stays in your browser.',
-    dropTitle:'Drop PNG / SVG files here', dropSub:'or click to choose files', assetSettings:'Per-asset settings',
+    intro:'Load multiple PNG, SVG, HEIC/HEIF, and other image assets and automatically scatter them into a seamless pattern. Image processing stays in your browser.',
+    dropTitle:'Drop PNG / SVG / HEIC files here', dropSub:'or click to choose files', assetSettings:'Per-asset settings',
     asset:'Asset', group:'Group', weight:'Weight', minimum:'Min', scalePct:'Scale %', flipPct:'Flip %', placementStats:'Placement',
     allOn:'All ON', allOff:'All OFF', weightNote:'Weight controls relative frequency. Size OFF uses a fixed 100%; only assets with Size ON use their custom scale.',
     sizePreview:'Size ratio preview', groupPlacement:'Group placement', mainShare:'Main share (%)',
@@ -832,7 +832,7 @@ const I18N = {
     addAssetsAlert:'Add PNG or SVG assets first.', modeGridLabel:'Grid', modeOffsetLabel:'Offset grid',
     balancedLabel:'Balanced random', fillLabel:'Fill gaps', randomLabel:'Fully random',
     inputTarget:'input target', uniformity:'uniformity', rotationOff:'rotation OFF', sequenceEven:'even asset sequence',
-    autoFit:'auto-fit to cells', svgLoadError:'Could not load SVG', imageLoadError:'Could not load image',
+    autoFit:'auto-fit to cells', svgLoadError:'Could not load SVG', imageLoadError:'Could not load image', heicLoadError:'Could not load HEIC/HEIF', heicDecoderError:'Could not load the HEIC/HEIF decoder. Check your connection.', heicConverting:'Converting HEIC/HEIF…',
     svgTooLarge:'SVG file is too large (5 MB max).', groupShareInactive:'Main share is used only when both Main and Sub assets exist.',
     assetRemovedReset:'Asset removed. Generate again to refresh the placement.', nothingToExport:'Generate a pattern first.',
     pngExportError:'Could not export PNG.'
@@ -1556,6 +1556,62 @@ function isSvgFile(file){
   return file.type === 'image/svg+xml' || /\.svg$/i.test(file.name);
 }
 
+function looksLikeHeicFile(file){
+  return /image\/(?:heic|heif)/i.test(file.type || '') || /\.(?:heic|heif)$/i.test(file.name || '');
+}
+
+async function isHeicFile(file){
+  if(looksLikeHeicFile(file)) return true;
+  try{
+    const bytes = new Uint8Array(await file.slice(0, 32).arrayBuffer());
+    const head = String.fromCharCode(...bytes);
+    if(!head.includes('ftyp')) return false;
+    return /(?:heic|heix|hevc|hevx|heim|heis|mif1|msf1)/i.test(head);
+  }catch(_){
+    return false;
+  }
+}
+
+const HEIC_DECODER_URL = 'https://cdn.jsdelivr.net/npm/heic-to@1.5.2/dist/iife/heic-to.js';
+let heicDecoderPromise = null;
+
+function ensureHeicDecoder(){
+  if(typeof window.HeicTo === 'function') return Promise.resolve(window.HeicTo);
+  if(heicDecoderPromise) return heicDecoderPromise;
+
+  heicDecoderPromise = new Promise((resolve, reject)=>{
+    const script = document.createElement('script');
+    script.src = HEIC_DECODER_URL;
+    script.async = true;
+    script.crossOrigin = 'anonymous';
+    script.onload = ()=>{
+      if(typeof window.HeicTo === 'function') resolve(window.HeicTo);
+      else reject(new Error(t('heicDecoderError')));
+    };
+    script.onerror = ()=>reject(new Error(t('heicDecoderError')));
+    document.head.appendChild(script);
+  });
+
+  return heicDecoderPromise;
+}
+
+async function convertHeicToPng(file){
+  const HeicTo = await ensureHeicDecoder();
+  const result = await HeicTo({ blob:file, type:'image/png' });
+  const blob = Array.isArray(result) ? result[0] : result;
+  if(!(blob instanceof Blob)) throw new Error(t('heicLoadError'));
+  return blob;
+}
+
+function loadImageFromUrl(url, message){
+  const img = new Image();
+  return new Promise((resolve, reject)=>{
+    img.onload = ()=>resolve(img);
+    img.onerror = ()=>reject(new Error(message));
+    img.src = url;
+  });
+}
+
 const MAX_SVG_BYTES = 5 * 1024 * 1024;
 const MAX_SVG_INTRINSIC = 4096;
 
@@ -1680,19 +1736,36 @@ async function makeAssetUrl(file){
 
 async function handleFiles(files){
   const imgs = files.filter(f =>
-    f.type.startsWith('image/') || /\.svg$/i.test(f.name)
+    f.type.startsWith('image/') || /\.(?:svg|heic|heif)$/i.test(f.name)
   );
 
   for(const file of imgs){
     let url = null;
     try{
-      url = await makeAssetUrl(file);
-      const img = new Image();
-      await new Promise((res, rej)=>{
-        img.onload = res;
-        img.onerror = () => rej(new Error(isSvgFile(file) ? t('svgLoadError') : t('imageLoadError')));
-        img.src = url;
-      });
+      const heic = await isHeicFile(file);
+      let img;
+
+      if(heic){
+        // Safari 17+ can decode HEIC natively. Try that first so iPhone users
+        // do not need any conversion or extra library download.
+        try{
+          url = URL.createObjectURL(file);
+          img = await loadImageFromUrl(url, t('heicLoadError'));
+        }catch(_nativeError){
+          if(url) URL.revokeObjectURL(url);
+          url = null;
+          statusEl.textContent = `${file.name}: ${t('heicConverting')}`;
+          const pngBlob = await convertHeicToPng(file);
+          url = URL.createObjectURL(pngBlob);
+          img = await loadImageFromUrl(url, t('heicLoadError'));
+        }
+      }else{
+        url = await makeAssetUrl(file);
+        img = await loadImageFromUrl(
+          url,
+          isSvgFile(file) ? t('svgLoadError') : t('imageLoadError')
+        );
+      }
 
       assets.push({
         name:file.name,
@@ -2475,7 +2548,7 @@ applyLanguage();
     <div class="public-lang-ja" lang="ja">
       <h2 id="about-title-ja">PNG・SVGをランダム配置してシームレスパターンを作る</h2>
       <p>
-        Seamless Scatter Makerは、複数のPNG・SVGなどの画像素材を読み込み、
+        Seamless Scatter Makerは、複数のPNG・SVG・HEIC/HEIFなどの画像素材を読み込み、
         自動でバランスよく散らして、上下左右が自然につながるシームレスパターンを作成できる無料ブラウザツールです。
         背景・テクスチャ・柄素材など、同じ画像を繰り返して使いたい場面に向いています。
       </p>
@@ -2492,7 +2565,7 @@ applyLanguage();
       <div class="seo-grid">
         <div class="seo-feature">
           <strong>複数画像をまとめて自動配置</strong>
-          <p>PNG・SVGなどの素材を複数読み込み、ランダムに散らして配置できます。</p>
+          <p>PNG・SVG・HEIC/HEIFなどの素材を複数読み込み、ランダムに散らして配置できます。</p>
         </div>
         <div class="seo-feature">
           <strong>シームレスにつながる配置</strong>
@@ -2522,7 +2595,7 @@ applyLanguage();
           <h3>Q. PNGやSVGはサーバーにアップロードされますか？</h3>
           <p>
             いいえ。Seamless Scatter MakerはAI生成サービスではなく、画像の配置・合成・書き出しをブラウザ内で処理します。
-            読み込んだPNG・SVGなどの画像ファイルを、当サイトのサーバーやAIサービスへ送信する処理はありません。
+            読み込んだPNG・SVG・HEIC/HEIFなどの画像ファイルを、当サイトのサーバーやAIサービスへ送信する処理はありません。
             画像をAIの解析や学習に使用することもありません。
           </p>
         </section>
@@ -2538,7 +2611,7 @@ applyLanguage();
         <section class="faq-item">
           <h3>Q. 複数画像をランダム配置できますか？</h3>
           <p>
-            はい。複数のPNG・SVGなどを同時に読み込み、自動で散らして配置できます。
+            はい。複数のPNG・SVG・HEIC/HEIFなどを同時に読み込み、自動で散らして配置できます。
             素材ごとに出現しやすさ、最低配置数、サイズ、回転、左右反転なども調整できます。
           </p>
         </section>
@@ -2571,7 +2644,7 @@ applyLanguage();
     <div class="public-lang-en" lang="en">
       <h2 id="about-title-en">Create seamless patterns by scattering PNG and SVG assets</h2>
       <p>
-        Seamless Scatter Maker is a free browser-based tool that loads multiple PNG, SVG, and other image assets,
+        Seamless Scatter Maker is a free browser-based tool that loads multiple PNG, SVG, HEIC/HEIF, and other image assets,
         automatically scatters them with balanced placement, and creates seamless patterns that connect naturally on all four edges.
         It is useful for backgrounds, textures, surface patterns, and other designs that need to repeat cleanly.
       </p>
@@ -2618,7 +2691,7 @@ applyLanguage();
           <h3>Q. Are my PNG or SVG files uploaded to a server?</h3>
           <p>
             No. Seamless Scatter Maker is not an AI generation service. Image placement, compositing, and export are processed in your browser.
-            The PNG, SVG, and other image files you load are not sent to this site's server or to an AI service, and they are not used for AI analysis or training.
+            The PNG, SVG, HEIC/HEIF, and other image files you load are not sent to this site's server or to an AI service, and they are not used for AI analysis or training.
           </p>
         </section>
 
