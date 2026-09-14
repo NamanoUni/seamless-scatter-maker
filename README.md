@@ -1,68 +1,104 @@
-# Seamless Scatter Maker — Cloudflare Pages 公開用
+# Seamless Scatter Maker
 
-このフォルダは、そのまま静的サイトとしてCloudflare Pagesへデプロイできます。
+複数のPNG・SVGなどの画像素材を自動で散らして、シームレスパターンを作成できる無料ブラウザツールです。
 
-## 最短の公開手順
+**公開サイト:**  
+https://seamless-scatter-maker.pages.dev/
 
-### A. Cloudflare Pagesへ直接アップロード
-1. Cloudflare Dashboardを開く
-2. Workers & Pages → Create → Pages
-3. Direct Upload（または同等の静的サイトアップロード）を選ぶ
-4. このフォルダの中身をアップロード
-5. 発行された `*.pages.dev` URLで動作確認
+## 特徴
 
-### B. GitHub経由
-1. このフォルダの中身をGitHubリポジトリへ入れる
-2. Cloudflare PagesでGitHubリポジトリを接続
-3. Framework preset: None
-4. Build command: 空欄
-5. Build output directory: `/` またはリポジトリのルート
-6. Deploy
+- 複数のPNG / SVG / WebP / JPEGを読み込み可能
+- 素材をランダム・均等・グリッドなどで自動配置
+- 上下左右につながるシームレスパターンを生成
+- 素材ごとに重み、最低配置数、サイズ、回転、左右反転を設定可能
+- Main / Subグループを使った配置バランス調整
+- 配置後のドラッグ微調整
+- Undo / Redo対応
+- PNG書き出し
+- 日本語 / English対応
+- PC・スマートフォン対応
 
-## 公開前に必ず直すもの
+## 画像データについて
 
-### 1. contact.html
-`YOUR-CONTACT@example.com` を実際の問い合わせ先へ変更してください。
+Seamless Scatter MakerはAI生成サービスではありません。
 
-### 2. 独自ドメイン取得後
-`sitemap.xml.example` の `YOUR-DOMAIN.example` を実際のドメインへ置換し、
-`sitemap.xml` にリネームしてください。
+読み込んだ画像素材の配置・合成・書き出しはブラウザ内で処理されます。  
+画像ファイルを、このサイトのサーバーやAIサービスへ送信する処理はありません。
 
-### 3. AdSense承認後
-- `adsense-snippet.example.html` を参考にAdSenseコードを追加
-- `ads.txt.example` の `pub-YOUR_PUBLISHER_ID` を実際のIDへ変更
-- `ads.txt` にリネーム
-- index.html の `ADSENSE_BOTTOM_SLOT_START` ～ `ADSENSE_BOTTOM_SLOT_END`
-  の位置に広告ユニットを置く
+画像をAIの解析や学習に使用することもありません。
 
-広告は「生成」「PNG書き出し」などの操作ボタンのすぐ近くには置かない想定です。
+※通常のWebアクセスに伴う通信や、第三者広告サービスを利用する場合の通信は別です。
 
-## 同梱ページ
-- index.html — ツール本体
-- how-to.html — 使い方
-- privacy.html — プライバシーポリシー
-- terms.html — 利用規約
-- contact.html — 問い合わせ
-- 404.html — 404ページ
-- site.css — 公開ページ共通CSS
-- _headers — Cloudflare Pages向け基本セキュリティヘッダー
-- robots.txt — クロール許可
-- ads.txt.example — AdSense用テンプレート
-- adsense-snippet.example.html — 広告コード設置メモ
-- sitemap.xml.example — サイトマップ雛形
+## 使い方
 
-## プライバシー上の設計
-ツールへ読み込んだPNG/SVGは、このツール自身の処理ではサーバーへ送信せず、
-ブラウザ内で配置・合成・PNG書き出しを行います。
+1. PNG / SVGなどの画像素材を追加
+2. 配置数や各素材の設定を調整
+3. 「生成」を押す
+4. 必要に応じて配置をドラッグして微調整
+5. 「PNG書き出し」で保存
 
-AdSenseなど第三者広告を有効にすると、広告事業者による通常のWeb通信やCookie利用は発生し得ます。
-必要な地域ではCMP/同意管理も設定してください。
+詳しい使い方は公開サイトの **How to** ページをご覧ください。
 
-## ローカル確認
-フォルダ内で簡易HTTPサーバーを起動すると確認しやすいです。
+## CLIP STUDIOとの使い分け
 
-Python例:
-`python -m http.server 8000`
+CLIP STUDIOの整列機能は、規則的に素材を並べる用途には便利です。
 
-その後:
-`http://localhost:8000/`
+一方で、複数の素材をランダムに散らして、端まで自然につながるシームレスパターンを作るには手作業が多くなるため、その作業を簡単にする目的でSeamless Scatter Makerを作りました。
+
+## 商用利用
+
+Seamless Scatter Makerで作成した画像は商用利用できます。
+
+ただし、読み込んだ画像素材そのものの著作権や利用規約については、各素材の権利者が定める条件に従ってください。
+
+詳しくは公開サイトの **Terms** をご確認ください。
+
+## 公開環境
+
+このサイトはGitHubリポジトリとCloudflare Pagesを接続して公開しています。
+
+GitHubへ変更をコミットすると、Cloudflare Pagesへ自動デプロイされます。
+
+### Cloudflare Pages設定
+
+- Framework preset: `None`
+- Build command: なし
+- Build output directory: リポジトリのルート
+
+## 主なファイル
+
+- `index.html` — ツール本体
+- `how-to.html` — 使い方
+- `privacy.html` — プライバシーポリシー
+- `terms.html` — 利用規約
+- `contact.html` — お問い合わせ
+- `404.html` — 404ページ
+- `site.css` — 共通CSS
+- `_headers` — Cloudflare Pages向けヘッダー設定
+- `robots.txt` — クローラー向け設定
+- `sitemap.xml` — サイトマップ
+
+## ローカルで確認する
+
+フォルダ内で簡易HTTPサーバーを起動すると確認できます。
+
+```bash
+python -m http.server 8000
+```
+
+その後、ブラウザで以下を開きます。
+
+```text
+http://localhost:8000/
+```
+
+## サイト運用
+
+- Google Search Console登録済み
+- `sitemap.xml` / `robots.txt` 対応
+- SEO向け説明・FAQをトップページに掲載
+- Google AdSenseは審査・承認後に広告表示を行う予定
+
+---
+
+Bug reports, feedback, and other inquiries are welcome through the Contact page on the website.
