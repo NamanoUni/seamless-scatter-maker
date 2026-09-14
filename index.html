@@ -694,7 +694,7 @@ const I18N = {
   }
 };
 
-let currentLang = localStorage.getItem('ssm-lang') === 'en' ? 'en' : 'ja';
+let currentLang = navigator.language.toLowerCase().startsWith('ja') ? 'ja' : 'en';
 function t(key){ return I18N[currentLang][key] ?? I18N.ja[key] ?? key; }
 
 let activeHelpTip = null;
@@ -899,13 +899,11 @@ syncRotationDisabledState();
 langJaEl.addEventListener('click',()=>{
   if(currentLang === 'ja') return;
   currentLang = 'ja';
-  localStorage.setItem('ssm-lang', currentLang);
   applyLanguage();
 });
 langEnEl.addEventListener('click',()=>{
   if(currentLang === 'en') return;
   currentLang = 'en';
-  localStorage.setItem('ssm-lang', currentLang);
   applyLanguage();
 });
 
