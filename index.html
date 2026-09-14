@@ -203,6 +203,11 @@
   button.primary{background:var(--accent);color:#08111f;border-color:transparent;font-weight:700}
   .canvasWrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
   canvas{cursor:grab;
+    touch-action:none;
+    overscroll-behavior:contain;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
 
     max-width:100%;max-height:calc(100vh - 110px);box-shadow:0 10px 30px #0008;
     background-image:
@@ -769,7 +774,7 @@
 
   <main>
     <div class="topbar">
-      <div><span data-i18n="preview">プレビュー</span> <span style="font-size:11px;color:var(--muted)" data-i18n="dragHint">（配置後は画像をドラッグして微調整できます）</span></div>
+      <div><span data-i18n="preview">プレビュー</span> <span style="font-size:11px;color:var(--muted)" data-i18n="dragHint">（ドラッグで移動・ハンドルで拡大縮小/回転・スマホは2本指）</span></div>
       <div id="status" class="status" data-i18n="addAssetsStatus">素材を追加してください</div>
     </div>
     <div class="canvasWrap">
@@ -797,7 +802,7 @@ const I18N = {
     uniformityHint:'※ メインは高めで全体へ均等に、サブは低めで隙間に自然に散らす設定が使いやすいです。',
     tries:'試行回数', randomSeed:'ランダムシード', avoidOverlap:'なるべく重ならないようにする', flipHint:'左右反転は素材ごとに設定できます。',
     generate:'生成', seedBtn:'シード', undoBtn:'↶ 戻す', redoBtn:'↷ やり直し', pngExport:'PNG書き出し', clearAll:'素材をすべてクリア',
-    preview:'プレビュー', dragHint:'（配置後は画像をドラッグして微調整できます）', addAssetsStatus:'素材を追加してください',
+    preview:'プレビュー', dragHint:'（ドラッグで移動・ハンドルで拡大縮小/回転・スマホは2本指）', addAssetsStatus:'素材を追加してください',
     tipAsset:'読み込んだ画像素材です。', tipGroup:'メインは先に均等配置、サブはその後で隙間に配置します。',
     tipWeight:'同じグループ内での出現比率です。数値が大きいほど多く配置されます。', tipMinimum:'この素材を最低でも何個置くかを指定します。',
     tipScale:'サイズ変更ON時に使う素材固有のサイズ倍率です。', tipFlipPct:'左右反転する確率です。50なら約半分が反転します。',
@@ -809,7 +814,7 @@ const I18N = {
     delete:'削除', ratio:'比率', minGuarantee:'最低保証数', size:'サイズ', rotate:'回転', flip:'反転',
     weightTitle:'重み', sizeToggleTip:'この素材だけ個別のサイズ倍率を使う', sizeScaleTip:'サイズ変更ON時の固定倍率 (%)',
     flipRateTip:'左右反転率 (%)', materialUnit:'素材', placedUnit:'個配置',
-    undoStatus:'元に戻しました', redoStatus:'やり直しました', movedStatus:'位置を調整しました',
+    undoStatus:'元に戻しました', redoStatus:'やり直しました', movedStatus:'位置を調整しました', transformStatus:'位置・サイズ・回転を調整しました',
     addAssetsAlert:'先にPNGまたはSVG素材を追加してください。', modeGridLabel:'グリッド整列', modeOffsetLabel:'互い違い整列',
     balancedLabel:'均等ランダム', fillLabel:'空白を埋める', randomLabel:'完全ランダム',
     inputTarget:'入力目標', uniformity:'均一さ', rotationOff:'回転OFF', sequenceEven:'素材順も均等周期',
@@ -834,7 +839,7 @@ const I18N = {
     uniformityHint:'Higher Main uniformity spreads focal assets more evenly; lower Sub uniformity lets supporting assets fill gaps more naturally.',
     tries:'Placement attempts', randomSeed:'Random seed', avoidOverlap:'Avoid overlap when possible', flipHint:'Horizontal flip can be set per asset.',
     generate:'Generate', seedBtn:'Seed', undoBtn:'↶ Undo', redoBtn:'↷ Redo', pngExport:'Export PNG', clearAll:'Clear all assets',
-    preview:'Preview', dragHint:'(drag placed images to fine-tune)', addAssetsStatus:'Add some assets to begin',
+    preview:'Preview', dragHint:'(drag to move, use handles to scale/rotate, or two fingers on mobile)', addAssetsStatus:'Add some assets to begin',
     tipAsset:'An imported image asset.', tipGroup:'Main assets are distributed first; Sub assets are placed into remaining gaps.',
     tipWeight:'Relative frequency within the same group. Larger values appear more often.', tipMinimum:'Minimum number of copies of this asset.',
     tipScale:'Per-asset scale used when Size is enabled.', tipFlipPct:'Chance of horizontal flipping. 50 means roughly half.',
@@ -846,7 +851,7 @@ const I18N = {
     delete:'Delete', ratio:'Ratio', minGuarantee:'Minimum count', size:'Size', rotate:'Rotate', flip:'Flip',
     weightTitle:'Weight', sizeToggleTip:'Use a custom size scale for this asset', sizeScaleTip:'Fixed scale when Size is ON (%)',
     flipRateTip:'Horizontal flip chance (%)', materialUnit:'assets', placedUnit:'placed',
-    undoStatus:'Undone', redoStatus:'Redone', movedStatus:'Position adjusted',
+    undoStatus:'Undone', redoStatus:'Redone', movedStatus:'Position adjusted', transformStatus:'Position, size, and rotation adjusted',
     addAssetsAlert:'Add PNG or SVG assets first.', modeGridLabel:'Grid', modeOffsetLabel:'Offset grid',
     balancedLabel:'Balanced random', fillLabel:'Fill gaps', randomLabel:'Fully random',
     inputTarget:'input target', uniformity:'uniformity', rotationOff:'rotation OFF', sequenceEven:'even asset sequence',
@@ -1031,6 +1036,7 @@ function invalidatePlacementState(statusMessage=''){
   currentPlacements = [];
   undoStack = [];
   redoStack = [];
+  selectedPlacementIndex = -1;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if(statusMessage) statusEl.textContent = statusMessage;
 }
@@ -2193,6 +2199,7 @@ function renderCurrentPlacements(){
     if(!a) continue;
     drawWrapped(a.img, p.x, p.y, p.w, p.h, p.angle, p.flipX);
   }
+  drawPlacementSelectionOverlay();
 }
 
 
@@ -2745,6 +2752,7 @@ function generate(){
     statusEl.textContent = `${placed} ${t('placedUnit')}・${shape.cols}×${shape.rows}・${S}×${S}・${modeText}・${t('sequenceEven')}${autoFitCount ? `・${autoFitCount} ${t('autoFit')}` : ''}`;
     pushUndoSnapshot(currentPlacements);
     currentPlacements = clonePlacements(generatedPlacements);
+    selectedPlacementIndex = -1;
     renderCurrentPlacements();
     return;
   }
@@ -2818,6 +2826,7 @@ function generate(){
 
   pushUndoSnapshot(currentPlacements);
   currentPlacements = clonePlacements(generatedPlacements);
+  selectedPlacementIndex = -1;
   renderCurrentPlacements();
 }
 
@@ -2847,54 +2856,270 @@ function hitTestPlacement(x,y){
   return -1;
 }
 
-function canvasPointFromEvent(e){
+function canvasPointFromClient(clientX, clientY){
   const r = canvas.getBoundingClientRect();
   return {
-    x:(e.clientX-r.left) * canvas.width / r.width,
-    y:(e.clientY-r.top) * canvas.height / r.height
+    x:(clientX-r.left) * canvas.width / r.width,
+    y:(clientY-r.top) * canvas.height / r.height
   };
 }
 
-let dragState = null;
+function canvasPointFromEvent(e){
+  return canvasPointFromClient(e.clientX, e.clientY);
+}
 
-canvas.addEventListener('pointerdown', e=>{
-  if(!currentPlacements.length) return;
-  const pt = canvasPointFromEvent(e);
+function canvasUiScale(){
+  const r = canvas.getBoundingClientRect();
+  return r.width > 0 ? canvas.width / r.width : 1;
+}
+
+let selectedPlacementIndex = -1;
+let transformState = null;
+const activeCanvasPointers = new Map();
+
+function normalizeAngleDelta(delta){
+  while(delta > Math.PI) delta -= Math.PI * 2;
+  while(delta < -Math.PI) delta += Math.PI * 2;
+  return delta;
+}
+
+function selectionHandleGeometry(p){
+  const ui = canvasUiScale();
+  const handleRadius = 10 * ui;
+  const rotateOffset = 28 * ui;
+  return {
+    ui,
+    handleRadius,
+    scaleX:p.w/2,
+    scaleY:p.h/2,
+    rotateX:0,
+    rotateY:-p.h/2 - rotateOffset
+  };
+}
+
+function placementLocalPoint(p, x, y){
+  const dx = signedTorusDelta(x, p.x, canvas.width);
+  const dy = signedTorusDelta(y, p.y, canvas.height);
+  const ca = Math.cos(-p.angle);
+  const sa = Math.sin(-p.angle);
+  return {
+    x:dx * ca - dy * sa,
+    y:dx * sa + dy * ca
+  };
+}
+
+function hitTestTransformHandle(p, x, y){
+  const local = placementLocalPoint(p, x, y);
+  const g = selectionHandleGeometry(p);
+  const scaleDist = Math.hypot(local.x - g.scaleX, local.y - g.scaleY);
+  if(scaleDist <= g.handleRadius * 1.45) return 'scale';
+  const rotateDist = Math.hypot(local.x - g.rotateX, local.y - g.rotateY);
+  if(rotateDist <= g.handleRadius * 1.55) return 'rotate';
+  return null;
+}
+
+function drawPlacementSelectionOverlay(){
+  if(selectedPlacementIndex < 0 || selectedPlacementIndex >= currentPlacements.length) return;
+  const p = currentPlacements[selectedPlacementIndex];
+  if(!p) return;
+
+  const g = selectionHandleGeometry(p);
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.angle);
+  ctx.lineWidth = 2 * g.ui;
+  ctx.strokeStyle = '#8fb1ff';
+  ctx.setLineDash([7 * g.ui, 5 * g.ui]);
+  ctx.strokeRect(-p.w/2, -p.h/2, p.w, p.h);
+  ctx.setLineDash([]);
+
+  ctx.beginPath();
+  ctx.moveTo(0, -p.h/2);
+  ctx.lineTo(g.rotateX, g.rotateY);
+  ctx.stroke();
+
+  ctx.fillStyle = '#8fb1ff';
+  ctx.strokeStyle = '#0c1118';
+  ctx.lineWidth = 2 * g.ui;
+
+  ctx.beginPath();
+  ctx.rect(g.scaleX - g.handleRadius, g.scaleY - g.handleRadius, g.handleRadius*2, g.handleRadius*2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(g.rotateX, g.rotateY, g.handleRadius, 0, Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function pointerPairMetrics(a, b){
+  const mid = {x:(a.x+b.x)/2, y:(a.y+b.y)/2};
+  const dx = b.x-a.x;
+  const dy = b.y-a.y;
+  return {
+    mid,
+    distance:Math.max(1, Math.hypot(dx,dy)),
+    angle:Math.atan2(dy,dx)
+  };
+}
+
+function startPinchTransform(){
+  if(selectedPlacementIndex < 0 || activeCanvasPointers.size < 2) return false;
+  const points = [...activeCanvasPointers.values()].slice(0,2);
+  const metrics = pointerPairMetrics(points[0], points[1]);
+  const p = currentPlacements[selectedPlacementIndex];
+  if(!p) return false;
+
+  const before = transformState?.before || clonePlacements(currentPlacements);
+  transformState = {
+    mode:'pinch',
+    index:selectedPlacementIndex,
+    before,
+    startMid:metrics.mid,
+    startDistance:metrics.distance,
+    startAngle:metrics.angle,
+    startX:p.x,
+    startY:p.y,
+    startW:p.w,
+    startH:p.h,
+    startRotation:p.angle
+  };
+  canvas.classList.add('dragging');
+  return true;
+}
+
+function beginSinglePointerTransform(e, pt){
+  if(!currentPlacements.length) return false;
+
+  if(selectedPlacementIndex >= 0 && selectedPlacementIndex < currentPlacements.length){
+    const selected = currentPlacements[selectedPlacementIndex];
+    const handle = hitTestTransformHandle(selected, pt.x, pt.y);
+    if(handle){
+      const dx = signedTorusDelta(pt.x, selected.x, canvas.width);
+      const dy = signedTorusDelta(pt.y, selected.y, canvas.height);
+      transformState = {
+        mode:handle,
+        index:selectedPlacementIndex,
+        pointerId:e.pointerId,
+        before:clonePlacements(currentPlacements),
+        startW:selected.w,
+        startH:selected.h,
+        startRotation:selected.angle,
+        startDistance:Math.max(1, Math.hypot(dx,dy)),
+        startPointerAngle:Math.atan2(dy,dx)
+      };
+      canvas.classList.add('dragging');
+      return true;
+    }
+  }
+
   const index = hitTestPlacement(pt.x,pt.y);
-  if(index < 0) return;
+  if(index < 0){
+    selectedPlacementIndex = -1;
+    transformState = null;
+    renderCurrentPlacements();
+    return false;
+  }
 
+  selectedPlacementIndex = index;
   const p = currentPlacements[index];
-  dragState = {
+  transformState = {
+    mode:'move',
     index,
+    pointerId:e.pointerId,
     before:clonePlacements(currentPlacements),
     dx:signedTorusDelta(pt.x,p.x,canvas.width),
     dy:signedTorusDelta(pt.y,p.y,canvas.height)
   };
   canvas.classList.add('dragging');
-  canvas.setPointerCapture(e.pointerId);
-  e.preventDefault();
+  renderCurrentPlacements();
+  return true;
+}
+
+canvas.addEventListener('pointerdown', e=>{
+  const pt = canvasPointFromEvent(e);
+  activeCanvasPointers.set(e.pointerId, pt);
+
+  if(activeCanvasPointers.size === 2 && selectedPlacementIndex >= 0){
+    startPinchTransform();
+    canvas.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+    return;
+  }
+
+  if(activeCanvasPointers.size > 1) return;
+  const started = beginSinglePointerTransform(e, pt);
+  if(started){
+    canvas.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+  }
 });
 
 canvas.addEventListener('pointermove', e=>{
-  if(!dragState) return;
   const pt = canvasPointFromEvent(e);
-  const p = currentPlacements[dragState.index];
+  if(activeCanvasPointers.has(e.pointerId)) activeCanvasPointers.set(e.pointerId, pt);
+  if(!transformState) return;
 
-  p.x = (pt.x - dragState.dx + canvas.width) % canvas.width;
-  p.y = (pt.y - dragState.dy + canvas.height) % canvas.height;
+  const p = currentPlacements[transformState.index];
+  if(!p) return;
+
+  if(transformState.mode === 'pinch'){
+    if(activeCanvasPointers.size < 2) return;
+    const points = [...activeCanvasPointers.values()].slice(0,2);
+    const metrics = pointerPairMetrics(points[0], points[1]);
+    const ratio = Math.max(0.08, Math.min(12, metrics.distance / transformState.startDistance));
+    const deltaAngle = normalizeAngleDelta(metrics.angle - transformState.startAngle);
+
+    p.w = Math.max(4, transformState.startW * ratio);
+    p.h = Math.max(4, transformState.startH * ratio);
+    p.angle = transformState.startRotation + deltaAngle;
+    p.x = (transformState.startX + (metrics.mid.x - transformState.startMid.x) + canvas.width) % canvas.width;
+    p.y = (transformState.startY + (metrics.mid.y - transformState.startMid.y) + canvas.height) % canvas.height;
+  }else if(transformState.pointerId === e.pointerId){
+    if(transformState.mode === 'move'){
+      p.x = (pt.x - transformState.dx + canvas.width) % canvas.width;
+      p.y = (pt.y - transformState.dy + canvas.height) % canvas.height;
+    }else if(transformState.mode === 'scale'){
+      const dx = signedTorusDelta(pt.x, p.x, canvas.width);
+      const dy = signedTorusDelta(pt.y, p.y, canvas.height);
+      const ratio = Math.max(0.08, Math.min(12, Math.hypot(dx,dy) / transformState.startDistance));
+      p.w = Math.max(4, transformState.startW * ratio);
+      p.h = Math.max(4, transformState.startH * ratio);
+    }else if(transformState.mode === 'rotate'){
+      const dx = signedTorusDelta(pt.x, p.x, canvas.width);
+      const dy = signedTorusDelta(pt.y, p.y, canvas.height);
+      const angleNow = Math.atan2(dy,dx);
+      p.angle = transformState.startRotation + normalizeAngleDelta(angleNow - transformState.startPointerAngle);
+    }
+  }
+
   renderCurrentPlacements();
+  e.preventDefault();
 });
 
-function finishDrag(e){
-  if(!dragState) return;
-  pushUndoSnapshot(dragState.before);
+function finishCanvasTransform(e){
+  activeCanvasPointers.delete(e.pointerId);
+  if(!transformState) return;
+
+  // Pinch中に片方が離れたら、そのジェスチャはそこで確定。
+  // 残った指は一度離してから次の操作を始める方が誤操作が少ない。
+  const shouldFinish = transformState.mode === 'pinch'
+    ? activeCanvasPointers.size < 2
+    : transformState.pointerId === e.pointerId;
+  if(!shouldFinish) return;
+
+  pushUndoSnapshot(transformState.before);
+  const wasMove = transformState.mode === 'move';
+  transformState = null;
   canvas.classList.remove('dragging');
-  dragState = null;
-  statusEl.textContent = `${t('movedStatus')}・${currentPlacements.length} ${t('placedUnit')}`;
+  statusEl.textContent = `${t(wasMove ? 'movedStatus' : 'transformStatus')}・${currentPlacements.length} ${t('placedUnit')}`;
+  renderCurrentPlacements();
 }
 
-canvas.addEventListener('pointerup', finishDrag);
-canvas.addEventListener('pointercancel', finishDrag);
+canvas.addEventListener('pointerup', finishCanvasTransform);
+canvas.addEventListener('pointercancel', finishCanvasTransform);
 
 document.getElementById('sizeAllOn').addEventListener('click', ()=>{
   assets.forEach(a => a.sizeOverride = true);
@@ -2947,8 +3172,18 @@ async function exportPng(){
   }
 
   try{
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = canvas.width;
+    exportCanvas.height = canvas.height;
+    const exportCtx = exportCanvas.getContext('2d');
+    for(const p of currentPlacements){
+      const asset = assets[p.assetIndex];
+      if(!asset) continue;
+      drawWrappedTo(exportCtx, exportCanvas.width, exportCanvas.height, asset.img, p.x, p.y, p.w, p.h, p.angle, p.flipX);
+    }
+
     const blob = await new Promise((resolve,reject)=>{
-      canvas.toBlob(
+      exportCanvas.toBlob(
         b => b ? resolve(b) : reject(new Error(t('pngExportError'))),
         'image/png'
       );
