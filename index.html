@@ -113,6 +113,19 @@
   }
   .drop.drag{border-color:var(--accent);background:#1b2230}
   .drop input{display:none}
+  .dropActions{
+    display:flex;
+    justify-content:center;
+    margin-top:8px;
+  }
+  .dropHintNote{
+    font-size:11px;
+    line-height:1.5;
+    color:var(--muted);
+    text-align:center;
+    margin-top:6px;
+    margin-bottom:2px;
+  }
   .thumbs{
     display:grid;
     grid-template-columns:repeat(4,1fr);
@@ -618,6 +631,10 @@
       <span style="font-size:12px;color:#9aa6b2" data-i18n="dropSub">またはクリックして選択</span>
       <input id="fileInput" type="file" accept="image/png,image/webp,image/jpeg,image/svg+xml,image/heic,image/heif,.svg,.heic,.heif" multiple>
     </div>
+    <div class="dropActions">
+      <button id="pasteBtn" class="action toolAction" type="button" data-i18n="pasteBtn">📋 切り抜きを貼り付け</button>
+    </div>
+    <div class="dropHintNote"><span data-i18n="pasteHint">iPhoneの「被写体をコピー」や画像の貼り付けから、透過のまま素材を追加できます。</span></div>
     <div id="thumbs" class="thumbs"></div>
     <div class="settingsScroll">
 
@@ -767,7 +784,7 @@
 const I18N = {
   ja: {
     intro:'PNG・SVG・HEIC/HEIFなどの画像素材を複数読み込んで、自動でランダム配置したシームレスパターンを作ります。画像処理はブラウザ内だけで完結します。',
-    dropTitle:'PNG / SVG / HEICをドロップ', dropSub:'またはクリックして選択', assetSettings:'素材ごとの設定',
+    dropTitle:'PNG / SVG / HEICをドロップ', dropSub:'またはクリックして選択', pasteBtn:'📋 切り抜きを貼り付け', pasteHint:'iPhoneの「被写体をコピー」や画像の貼り付けから、透過のまま素材を追加できます。', assetSettings:'素材ごとの設定',
     asset:'素材', group:'グループ', weight:'重み', minimum:'最低', scalePct:'倍率%', flipPct:'反転率%', placementStats:'配置数',
     allOn:'全ON', allOff:'全OFF', weightNote:'「重み」は出現しやすさです。サイズ変更OFFは固定100%、ONの素材だけ指定倍率を使います。',
     sizePreview:'サイズ比率プレビュー', groupPlacement:'グループ配置', mainShare:'メイン割合 (%)',
@@ -799,11 +816,12 @@ const I18N = {
     autoFit:'個をセル内へ自動縮小', svgLoadError:'SVGを読み込めませんでした', imageLoadError:'画像を読み込めませんでした', heicLoadError:'HEIC/HEIFを読み込めませんでした', heicDecoderError:'HEIC/HEIF変換機能を読み込めませんでした。通信環境を確認してください。', heicConverting:'HEIC/HEIFを変換中…',
     svgTooLarge:'SVGファイルが大きすぎます（5MBまで）。', groupShareInactive:'メインとサブの両方があるときだけ「メイン割合」を使います。',
     assetRemovedReset:'素材を削除しました。配置を再生成してください。', nothingToExport:'先に生成してください。',
+    pasteNotSupported:'このブラウザではクリップボード画像の読み取りに対応していません。画像を通常の貼り付け操作で貼るか、ファイルとして追加してください。', pasteNoImage:'クリップボード内に画像が見つかりませんでした。iPhoneでは写真を長押しして「コピー」したあと、このボタンを押してください。', pasteReadError:'クリップボード画像を読み込めませんでした。画像をコピーし直すか、ファイルとして追加してください。', jpegTransparencyWarning:'JPEGは透明背景を保持できません。iPhoneの切り抜きは「コピー → 貼り付け」か透過PNGの利用がおすすめです。',
     pngExportError:'PNG書き出しに失敗しました。'
   },
   en: {
     intro:'Load multiple PNG, SVG, HEIC/HEIF, and other image assets and automatically scatter them into a seamless pattern. Image processing stays in your browser.',
-    dropTitle:'Drop PNG / SVG / HEIC files here', dropSub:'or click to choose files', assetSettings:'Per-asset settings',
+    dropTitle:'Drop PNG / SVG / HEIC files here', dropSub:'or click to choose files', pasteBtn:'📋 Paste cutout', pasteHint:'Add assets with transparency by pasting an image or using iPhone “Copy Subject”.', assetSettings:'Per-asset settings',
     asset:'Asset', group:'Group', weight:'Weight', minimum:'Min', scalePct:'Scale %', flipPct:'Flip %', placementStats:'Placement',
     allOn:'All ON', allOff:'All OFF', weightNote:'Weight controls relative frequency. Size OFF uses a fixed 100%; only assets with Size ON use their custom scale.',
     sizePreview:'Size ratio preview', groupPlacement:'Group placement', mainShare:'Main share (%)',
@@ -835,6 +853,7 @@ const I18N = {
     autoFit:'auto-fit to cells', svgLoadError:'Could not load SVG', imageLoadError:'Could not load image', heicLoadError:'Could not load HEIC/HEIF', heicDecoderError:'Could not load the HEIC/HEIF decoder. Check your connection.', heicConverting:'Converting HEIC/HEIF…',
     svgTooLarge:'SVG file is too large (5 MB max).', groupShareInactive:'Main share is used only when both Main and Sub assets exist.',
     assetRemovedReset:'Asset removed. Generate again to refresh the placement.', nothingToExport:'Generate a pattern first.',
+    pasteNotSupported:'This browser does not support reading images from the clipboard. Try a normal paste action or add the image as a file.', pasteNoImage:'No image was found on the clipboard. On iPhone, long-press the subject in Photos, tap Copy, then press this button.', pasteReadError:'Could not read an image from the clipboard. Try copying the image again or add it as a file.', jpegTransparencyWarning:'JPEG cannot preserve transparency. For iPhone cutouts, use copy-and-paste or a transparent PNG.',
     pngExportError:'Could not export PNG.'
   }
 };
@@ -940,6 +959,7 @@ function applyLanguage(){
 
 const drop = document.getElementById('drop');
 const fileInput = document.getElementById('fileInput');
+const pasteBtn = document.getElementById('pasteBtn');
 const thumbs = document.getElementById('thumbs');
 const assetControls = document.getElementById('assetControls');
 const assetList = document.getElementById('assetList');
@@ -1547,6 +1567,32 @@ drop.addEventListener('drop',e=>{
   handleFiles([...e.dataTransfer.files]);
 });
 fileInput.addEventListener('change',()=>handleFiles([...fileInput.files]));
+if(pasteBtn){
+  pasteBtn.addEventListener('click', async ()=>{
+    if(!(navigator.clipboard && navigator.clipboard.read)){
+      alert(t('pasteNotSupported'));
+      return;
+    }
+    try{
+      const items = await navigator.clipboard.read();
+      const files = await clipboardItemsToFiles(items);
+      if(!files.length){
+        alert(t('pasteNoImage'));
+        return;
+      }
+      await handleFiles(files);
+    }catch(err){
+      console.error(err);
+      alert(t('pasteReadError'));
+    }
+  });
+}
+document.addEventListener('paste', async e=>{
+  const files = clipboardDataToFiles(e.clipboardData);
+  if(!files.length) return;
+  e.preventDefault();
+  await handleFiles(files);
+});
 countEl.addEventListener('input',()=>updateAssetStats());
 sizeEl.addEventListener('change',()=>{ updateAssetStats(); renderSizePreview(); });
 mainShareEl.addEventListener('input',()=>updateAssetStats());
@@ -1554,6 +1600,58 @@ mainShareNumEl.addEventListener('input',()=>updateAssetStats());
 
 function isSvgFile(file){
   return file.type === 'image/svg+xml' || /\.svg$/i.test(file.name);
+}
+
+function isJpegFile(file){
+  return /image\/jpe?g/i.test(file.type || '') || /\.(?:jpe?g)$/i.test(file.name || '');
+}
+
+function clipboardBlobToFile(blob, index){
+  const mime = String(blob?.type || '').toLowerCase();
+  const extMap = {
+    'image/png':'png',
+    'image/jpeg':'jpg',
+    'image/webp':'webp',
+    'image/svg+xml':'svg',
+    'image/heic':'heic',
+    'image/heif':'heif'
+  };
+  const ext = extMap[mime] || 'png';
+  const type = mime || (ext === 'svg' ? 'image/svg+xml' : `image/${ext}`);
+  return new File([blob], `pasted-image-${Date.now()}-${index}.${ext}`, { type });
+}
+
+async function clipboardItemsToFiles(items){
+  const files = [];
+  let index = 1;
+  for(const item of items || []){
+    const types = Array.from(item.types || []);
+    const preferredType =
+      types.find(type => /^image\/png$/i.test(type)) ||
+      types.find(type => /^image\/svg\+xml$/i.test(type)) ||
+      types.find(type => /^image\/webp$/i.test(type)) ||
+      types.find(type => /^image\/(?:jpeg|heic|heif)$/i.test(type)) ||
+      types.find(type => /^image\//i.test(type));
+
+    if(!preferredType) continue;
+    const blob = await item.getType(preferredType);
+    if(blob) files.push(clipboardBlobToFile(blob, index++));
+  }
+  return files;
+}
+
+function clipboardDataToFiles(clipboardData){
+  const files = [];
+  let index = 1;
+  for(const item of Array.from(clipboardData?.items || [])){
+    if(item.kind !== 'file') continue;
+    const file = item.getAsFile();
+    if(!file) continue;
+    if(file.type.startsWith('image/') || /\.(?:svg|heic|heif)$/i.test(file.name || '')){
+      files.push(file.name ? file : clipboardBlobToFile(file, index++));
+    }
+  }
+  return files;
 }
 
 function looksLikeHeicFile(file){
@@ -1738,6 +1836,7 @@ async function handleFiles(files){
   const imgs = files.filter(f =>
     f.type.startsWith('image/') || /\.(?:svg|heic|heif)$/i.test(f.name)
   );
+  const hasJpeg = imgs.some(file => isJpegFile(file));
 
   for(const file of imgs){
     let url = null;
@@ -1790,7 +1889,9 @@ async function handleFiles(files){
   renderAssets();
   updateAssetStats();
   renderSizePreview();
-  statusEl.textContent = `${assets.length} ${t('materialUnit')}`;
+  statusEl.textContent = hasJpeg
+    ? `${assets.length} ${t('materialUnit')}・${t('jpegTransparencyWarning')}`
+    : `${assets.length} ${t('materialUnit')}`;
 }
 
 function torusDelta(a, b, size){
