@@ -1866,10 +1866,12 @@ async function handleFiles(files){
         );
       }
 
+      const collisionProfile = createCollisionProfile(img);
       assets.push({
         name:file.name,
         img,
         url,
+        collisionProfile,
         weight:1,
         minCount:0,
         sizeOverride:false,
@@ -1900,6 +1902,203 @@ function torusDelta(a, b, size){
 }
 function torusDistance(x1, y1, x2, y2, size){
   return Math.hypot(torusDelta(x1, x2, size), torusDelta(y1, y2, size));
+}
+
+function torusSignedDelta(a, b, size){
+  let d = a - b;
+  if(d > size * 0.5) d -= size;
+  else if(d < -size * 0.5) d += size;
+  return d;
+}
+
+function createCollisionProfile(img){
+  const srcW = Math.max(1, img.naturalWidth || img.width || 1);
+  const srcH = Math.max(1, img.naturalHeight || img.height || 1);
+  const aspect = srcW / srcH;
+  const maxMaskSide = 40;
+  const maskW = Math.max(8, Math.min(maxMaskSide, Math.round(aspect >= 1 ? maxMaskSide : maxMaskSide * aspect)));
+  const maskH = Math.max(8, Math.min(maxMaskSide, Math.round(aspect >= 1 ? maxMaskSide / Math.max(aspect, 1e-6) : maxMaskSide)));
+
+  // 元画像サイズのCanvasは作らず、衝突判定に必要な小さいCanvasへ直接縮小する。
+  // iPhoneの高解像度写真でもメモリ使用量を抑えられる。
+  const temp = document.createElement('canvas');
+  temp.width = maskW;
+  temp.height = maskH;
+  const tctx = temp.getContext('2d', {willReadFrequently:true});
+  tctx.clearRect(0, 0, maskW, maskH);
+  tctx.drawImage(img, 0, 0, maskW, maskH);
+
+  let imageData;
+  try{
+    imageData = tctx.getImageData(0, 0, maskW, maskH);
+  }catch(_err){
+    return {
+      maskW:1,
+      maskH:1,
+      mask:new Uint8Array([1]),
+      samplePoints:[{u:0,v:0}],
+      solidRatio:1
+    };
+  }
+
+  const rgba = imageData.data;
+  const alphaThreshold = 18;
+  const mask = new Uint8Array(maskW * maskH);
+  let occupied = 0;
+
+  // 縮小後の各セルのα値で「実際に見えている部分」を粗くマスク化。
+  for(let gy=0; gy<maskH; gy++){
+    for(let gx=0; gx<maskW; gx++){
+      const alpha = rgba[(gy * maskW + gx) * 4 + 3];
+      if(alpha > alphaThreshold){
+        mask[gy * maskW + gx] = 1;
+        occupied++;
+      }
+    }
+  }
+
+  if(!occupied){
+    mask[Math.floor(maskH / 2) * maskW + Math.floor(maskW / 2)] = 1;
+    occupied = 1;
+  }
+
+  // 全セルではなく輪郭セルだけを照合する。
+  // 形状精度を維持しつつ、候補を大量に試すときの負荷を大きく抑える。
+  const samplePoints = [];
+  for(let gy=0; gy<maskH; gy++){
+    for(let gx=0; gx<maskW; gx++){
+      if(!mask[gy * maskW + gx]) continue;
+      let boundary = false;
+      for(let oy=-1; oy<=1 && !boundary; oy++){
+        for(let ox=-1; ox<=1; ox++){
+          if(ox === 0 && oy === 0) continue;
+          const nx = gx + ox;
+          const ny = gy + oy;
+          if(nx < 0 || nx >= maskW || ny < 0 || ny >= maskH || !mask[ny * maskW + nx]){
+            boundary = true;
+            break;
+          }
+        }
+      }
+      if(boundary){
+        samplePoints.push({
+          u: ((gx + 0.5) / maskW) - 0.5,
+          v: ((gy + 0.5) / maskH) - 0.5
+        });
+      }
+    }
+  }
+
+  // 念のため輪郭が取れなかった場合は中央1点を使う。
+  if(!samplePoints.length) samplePoints.push({u:0, v:0});
+
+  return {
+    maskW,
+    maskH,
+    mask,
+    samplePoints,
+    solidRatio: occupied / Math.max(1, maskW * maskH)
+  };
+}
+
+function resolvePlacementTransform(c){
+  return {
+    angle: typeof c.angle === 'number' ? c.angle : 0,
+    flipX: !!c.flipX
+  };
+}
+
+function worldPointFromLocal(c, localX, localY, angle, flipX){
+  const lx = flipX ? -localX : localX;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return {
+    x: c.x + lx * cos - localY * sin,
+    y: c.y + lx * sin + localY * cos
+  };
+}
+
+function isOpaqueAtNormalized(asset, u, v){
+  const profile = asset.collisionProfile;
+  if(!profile) return true;
+  if(u < -0.5 || u > 0.5 || v < -0.5 || v > 0.5) return false;
+
+  const gx = Math.max(0, Math.min(profile.maskW - 1, Math.floor((u + 0.5) * profile.maskW)));
+  const gy = Math.max(0, Math.min(profile.maskH - 1, Math.floor((v + 0.5) * profile.maskH)));
+  return !!profile.mask[gy * profile.maskW + gx];
+}
+
+function opaqueOverlapBetweenPlacements(c, b, size){
+  const profileA = c.a?.collisionProfile;
+  const profileB = b.a?.collisionProfile;
+  if(!profileA || !profileB) return false;
+
+  const ta = resolvePlacementTransform(c);
+  const tb = resolvePlacementTransform(b);
+  const bx = b.x ?? b.cx;
+  const by = b.y ?? b.cy;
+
+  // まず外接円で遠い組み合わせを除外し、近いものだけ透過マスクを照合する。
+  const approxOuterA = Math.hypot(c.w, c.h) * 0.5;
+  const approxOuterB = Math.hypot(b.w, b.h) * 0.5;
+  if(torusDistance(c.x, c.y, bx, by, size) > approxOuterA + approxOuterB + 2){
+    return false;
+  }
+
+  const cosB = Math.cos(tb.angle);
+  const sinB = Math.sin(tb.angle);
+
+  for(const p of profileA.samplePoints){
+    const world = worldPointFromLocal(c, p.u * c.w, p.v * c.h, ta.angle, ta.flipX);
+    const dx = torusSignedDelta(world.x, bx, size);
+    const dy = torusSignedDelta(world.y, by, size);
+
+    let localBX = dx * cosB + dy * sinB;
+    const localBY = -dx * sinB + dy * cosB;
+    if(tb.flipX) localBX = -localBX;
+
+    if(isOpaqueAtNormalized(
+      b.a,
+      localBX / Math.max(1e-6, b.w),
+      localBY / Math.max(1e-6, b.h)
+    )) return true;
+  }
+
+  const cosA = Math.cos(ta.angle);
+  const sinA = Math.sin(ta.angle);
+
+  for(const p of profileB.samplePoints){
+    const world = worldPointFromLocal(
+      {x:bx, y:by},
+      p.u * b.w,
+      p.v * b.h,
+      tb.angle,
+      tb.flipX
+    );
+
+    const dx = torusSignedDelta(world.x, c.x, size);
+    const dy = torusSignedDelta(world.y, c.y, size);
+
+    let localAX = dx * cosA + dy * sinA;
+    const localAY = -dx * sinA + dy * cosA;
+    if(ta.flipX) localAX = -localAX;
+
+    if(isOpaqueAtNormalized(
+      c.a,
+      localAX / Math.max(1e-6, c.w),
+      localAY / Math.max(1e-6, c.h)
+    )) return true;
+  }
+
+  return false;
+}
+
+function opaqueOverlapCount(c, boxes, size){
+  let count = 0;
+  for(const b of boxes){
+    if(opaqueOverlapBetweenPlacements(c, b, size)) count++;
+  }
+  return count;
 }
 
 /*
@@ -2139,6 +2338,15 @@ function generate(){
   const targetCounts = placementProfile.targets;
   const densityRef = Math.sqrt((S * S) / Math.max(1, effectiveTarget));
 
+  const balanceCols = Math.max(3, Math.min(6, Math.round(Math.sqrt(Math.max(9, effectiveTarget / 1.15)))));
+  const balanceRows = balanceCols;
+  const balanceCellCount = balanceCols * balanceRows;
+  const balanceCellW = S / balanceCols;
+  const balanceCellH = S / balanceRows;
+  const placedByAssetCell = new Map();
+  const placedByGroupCell = new Map();
+  const placedOverallCell = new Array(balanceCellCount).fill(0);
+
   // 同じ素材が一箇所に偏らないための目安距離。
   // サイズではなく「その素材が何個あるか」を基準にするので、
   // 小さい月や星も同種同士で固まりにくい。
@@ -2179,7 +2387,121 @@ function generate(){
     return (deficit * deficit) / Math.max(1, ideal);
   }
 
+  function ensureCellCounts(map, key){
+    if(!map.has(key)) map.set(key, new Array(balanceCellCount).fill(0));
+    return map.get(key);
+  }
 
+  function getBalanceCellCoords(x, y){
+    const cx = Math.max(0, Math.min(balanceCols - 1, Math.floor(x / balanceCellW)));
+    const cy = Math.max(0, Math.min(balanceRows - 1, Math.floor(y / balanceCellH)));
+    return {cx, cy, idx: cy * balanceCols + cx};
+  }
+
+  function wrappedCellIndex(cx, cy){
+    const x = (cx + balanceCols) % balanceCols;
+    const y = (cy + balanceRows) % balanceRows;
+    return y * balanceCols + x;
+  }
+
+  function neighborhoodCellCount(arr, cx, cy, radius=1){
+    let total = 0;
+    for(let oy=-radius; oy<=radius; oy++){
+      for(let ox=-radius; ox<=radius; ox++){
+        total += arr[wrappedCellIndex(cx + ox, cy + oy)] || 0;
+      }
+    }
+    return total;
+  }
+
+  function countExcessPenalty(nextValue, idealValue, slack=0.35){
+    const threshold = idealValue + slack;
+    if(nextValue <= threshold) return 0;
+    const over = nextValue - threshold;
+    return (over * over) / Math.max(0.85, threshold);
+  }
+
+  function chooseBalancedCell(assetIndex){
+    const assetCells = ensureCellCounts(placedByAssetCell, assetIndex);
+    const group = groupOfAssetIndex(assetIndex);
+    const groupCells = ensureCellCounts(placedByGroupCell, group);
+    const shortlist = [];
+
+    for(let cy=0; cy<balanceRows; cy++){
+      for(let cx=0; cx<balanceCols; cx++){
+        const idx = cy * balanceCols + cx;
+        const assetLocal = neighborhoodCellCount(assetCells, cx, cy, 1);
+        const groupLocal = neighborhoodCellCount(groupCells, cx, cy, 1);
+        const overallLocal = neighborhoodCellCount(placedOverallCell, cx, cy, 1);
+        const score = assetCells[idx] * 1.65
+          + assetLocal * 0.95
+          + groupCells[idx] * 0.92
+          + groupLocal * 0.56
+          + placedOverallCell[idx] * 0.34
+          + overallLocal * 0.18
+          + rnd() * 0.16;
+
+        shortlist.push({idx, score});
+      }
+    }
+
+    shortlist.sort((a,b)=>a.score-b.score);
+    const take = Math.max(1, Math.min(4, shortlist.length));
+    return shortlist[Math.floor(rnd() * take)].idx;
+  }
+
+  function fineBalancePenalty(c){
+    const {cx, cy, idx} = getBalanceCellCoords(c.x, c.y);
+    const assetCells = ensureCellCounts(placedByAssetCell, c.assetIndex);
+    const group = groupOfAssetIndex(c.assetIndex);
+    const groupCells = ensureCellCounts(placedByGroupCell, group);
+
+    const assetTarget = Math.max(1, targetCounts[c.assetIndex] || 1);
+    const groupTarget = Math.max(1, groupTargetCounts[group] || 1);
+    const u = uniformityForAssetIndex(c.assetIndex);
+
+    const assetCellIdeal = assetTarget / balanceCellCount;
+    const groupCellIdeal = groupTarget / balanceCellCount;
+    const overallCellIdeal = Math.max(1, effectiveTarget) / balanceCellCount;
+
+    const nearRadius = 1;
+    const nearCells = Math.pow(nearRadius * 2 + 1, 2);
+
+    const assetLocalNext = neighborhoodCellCount(assetCells, cx, cy, nearRadius) + 1;
+    const groupLocalNext = neighborhoodCellCount(groupCells, cx, cy, nearRadius) + 1;
+    const overallLocalNext = neighborhoodCellCount(placedOverallCell, cx, cy, nearRadius) + 1;
+
+    const assetCellNext = assetCells[idx] + 1;
+    const groupCellNext = groupCells[idx] + 1;
+    const overallCellNext = placedOverallCell[idx] + 1;
+
+    const focusBoost = 0.9 + u * 0.9 + (group === 'main' ? 0.16 : 0);
+
+    return focusBoost * (
+      countExcessPenalty(assetCellNext, assetCellIdeal, 0.30) * 1.10 +
+      countExcessPenalty(assetLocalNext, assetCellIdeal * nearCells, 0.40) * 1.55 +
+      countExcessPenalty(groupCellNext, groupCellIdeal, 0.45) * 0.70 +
+      countExcessPenalty(groupLocalNext, groupCellIdeal * nearCells, 0.60) * 0.92 +
+      countExcessPenalty(overallCellNext, overallCellIdeal, 0.55) * 0.26 +
+      countExcessPenalty(overallLocalNext, overallCellIdeal * nearCells, 0.75) * 0.52
+    );
+  }
+
+  function makeBalancedRandomPoint(assetIndex){
+    const u = uniformityForAssetIndex(assetIndex);
+    const biased = mode !== 'random' && rnd() < (0.30 + u * 0.45);
+    if(!biased || placed <= 0){
+      return {x:rnd() * S, y:rnd() * S};
+    }
+
+    const idx = chooseBalancedCell(assetIndex);
+    const cx = idx % balanceCols;
+    const cy = Math.floor(idx / balanceCols);
+    return {
+      x: Math.min(S - 1e-6, (cx + rnd()) * balanceCellW),
+      y: Math.min(S - 1e-6, (cy + rnd()) * balanceCellH)
+    };
+  }
 
   function ensureQuadrantCounts(assetIndex){
     if(!placedByAssetQuadrant.has(assetIndex)){
@@ -2244,20 +2566,33 @@ function generate(){
       w = h * aspect;
     }
 
-    const x = fixedX === null ? rnd() * S : fixedX;
-    const y = fixedY === null ? rnd() * S : fixedY;
+    const point = fixedX === null || fixedY === null
+      ? makeBalancedRandomPoint(assetIndex)
+      : null;
+    const x = fixedX === null ? point.x : fixedX;
+    const y = fixedY === null ? point.y : fixedY;
+
+    const angle = (disableRotationEl.checked || a.rotateEnabled === false)
+      ? 0
+      : (rnd() * 2 - 1) * maxRot;
+    const localFlipRate = Math.max(0, Math.min(100, Number(a.flipRate ?? 50))) / 100;
+    const flipX = a.flipEnabled !== false && rnd() < localFlipRate;
 
     const visualSize = Math.max(w, h);
     const u = uniformityForAssetIndex(assetIndex);
-    const r = visualSize * (0.26 + u * 0.08);
-    const gap = Math.min(w, h) * (padPct * (0.45 + u * 0.35));
+    const solidRatio = a.collisionProfile?.solidRatio ?? 1;
+    const shapeTightness = 0.72 + solidRatio * 0.28;
+    const r = visualSize * (0.22 + u * 0.07) * shapeTightness;
+    const gap = Math.min(w, h) * (padPct * (0.32 + u * 0.26)) * shapeTightness;
     const densityR = visualSize * (0.62 + u * 0.52) + densityRef * (0.04 + u * 0.06);
     const sameTypeR = visualSize * (0.88 + u * 0.70) + densityRef * (0.05 + u * 0.08);
 
-    return {a, assetIndex, x, y, w, h, r, gap, densityR, sameTypeR};
+    return {a, assetIndex, x, y, w, h, r, gap, densityR, sameTypeR, angle, flipX};
   }
 
-  function candidateScore(c, relax=1){
+  // 「なるべく重ならない」は透過マスクの実形状だけをハード判定する。
+  // 従来の半径(clearance)は配置の見た目を整えるソフト評価として残す。
+  function candidateScore(c){
     const clear = clearanceToBoxes(c, boxes, S);
     const densityPenalty = localDensityPenalty(c, boxes, S);
     const sameTypePenalty = localSameTypePenalty(c, boxes, S);
@@ -2265,9 +2600,11 @@ function generate(){
     const idealSame = sameTypeIdealSpacing[c.assetIndex] || densityRef;
     const u = uniformityForAssetIndex(c.assetIndex);
     const areaBiasPenalty = coarseBalancePenalty(c);
+    const fineBiasPenalty = fineBalancePenalty(c);
     const groupPenalty = groupSpacingPenalty(c);
+    const opaqueOverlap = avoidOverlapEl.checked ? opaqueOverlapCount(c, boxes, S) : 0;
 
-    if(avoidOverlapEl.checked && clear < -c.r * (1-relax)) return -Infinity;
+    if(opaqueOverlap > 0) return -Infinity;
 
     const fitBonus = Math.max(0, Math.min(clear, c.r * 1.4)) / Math.max(1, c.r);
     const randomness = (rnd() - 0.5) * densityRef * (0.10 + (1-u) * 0.42);
@@ -2287,7 +2624,9 @@ function generate(){
         - sameTypePenalty * 0.52
         - sameSpacingPenalty * 0.40
         - areaBiasPenalty * 58
-        - groupPenalty * 0.55;
+        - fineBiasPenalty * 34
+        - groupPenalty * 0.55
+        - opaqueOverlap * 240;
     }
 
     if(mode === 'balanced'){
@@ -2297,7 +2636,9 @@ function generate(){
         - sameTypePenalty * (0.74 + u * 0.72)
         - sameSpacingPenalty * (1.00 + u * 0.70)
         - areaBiasPenalty * (88 + u * 56)
+        - fineBiasPenalty * (76 + u * 54)
         - groupPenalty * (1.10 + u * 0.75)
+        - opaqueOverlap * (420 + u * 180)
         + randomness;
     }
 
@@ -2307,16 +2648,17 @@ function generate(){
       - sameTypePenalty * (0.64 + u * 0.48)
       - sameSpacingPenalty * (0.72 + u * 0.48)
       - areaBiasPenalty * (62 + u * 40)
+      - fineBiasPenalty * (52 + u * 32)
       - groupPenalty * (0.72 + u * 0.50)
+      - opaqueOverlap * (320 + u * 120)
       + randomness;
   }
 
   function place(c, forceAngle=null){
     const angle = forceAngle !== null
       ? forceAngle
-      : ((disableRotationEl.checked || c.a.rotateEnabled === false) ? 0 : (rnd() * 2 - 1) * maxRot);
-    const localFlipRate = Math.max(0, Math.min(100, Number(c.a.flipRate ?? 50))) / 100;
-    const flipX = c.a.flipEnabled !== false && rnd() < localFlipRate;
+      : (typeof c.angle === 'number' ? c.angle : 0);
+    const flipX = typeof c.flipX === 'boolean' ? c.flipX : false;
 
     drawWrapped(c.a.img, c.x, c.y, c.w, c.h, angle, flipX);
 
@@ -2331,9 +2673,14 @@ function generate(){
     });
 
     boxes.push({
+      a:c.a,
       assetIndex:c.assetIndex,
+      x:c.x,
+      y:c.y,
       cx:c.x, cy:c.y, w:c.w, h:c.h, r:c.r, gap:c.gap,
-      densityR:c.densityR, sameTypeR:c.sameTypeR
+      densityR:c.densityR, sameTypeR:c.sameTypeR,
+      angle,
+      flipX
     });
 
     placedByAssetIndex.set(c.assetIndex, (placedByAssetIndex.get(c.assetIndex) || 0) + 1);
@@ -2345,16 +2692,21 @@ function generate(){
     if(c.x < S * 0.5) hCounts.left++; else hCounts.right++;
     if(c.y < S * 0.5) hCounts.top++; else hCounts.bottom++;
 
+    const {idx} = getBalanceCellCoords(c.x, c.y);
+    ensureCellCounts(placedByAssetCell, c.assetIndex)[idx]++;
+    ensureCellCounts(placedByGroupCell, groupOfAssetIndex(c.assetIndex))[idx]++;
+    placedOverallCell[idx]++;
+
     placed++;
   }
 
-  function bestCandidate(assetIndex, relax=1, samples=null){
+  function bestCandidate(assetIndex, samples=null){
     let best = null, bestScore = -Infinity;
     const u = uniformityForAssetIndex(assetIndex);
     const n = samples || Math.max(30, Math.min(260, Math.round(tries * (1.0 + u))));
     for(let t=0;t<n;t++){
       const c = makeCandidate(assetIndex);
-      const score = candidateScore(c, relax);
+      const score = candidateScore(c);
       if(score > bestScore){
         bestScore = score;
         best = c;
@@ -2398,7 +2750,7 @@ function generate(){
   }
 
   // ---- real minimum guarantee pass ----
-  // 大きい保証素材から置く。通常条件→緩和→最後は最良位置へ強制配置。
+  // 大きい保証素材から置く。重ならない候補を追加試行し、最後は最低保証を優先して配置する。
   const guaranteed = [];
   assets.forEach((a,i)=>{
     const n = getMinGuarantee(a);
@@ -2408,9 +2760,9 @@ function generate(){
   guaranteed.sort((a,b)=>b.priority-a.priority || a.jitter-b.jitter);
 
   for(const g of guaranteed){
-    let c = bestCandidate(g.assetIndex, 1);
-    if(!c || candidateScore(c,1) === -Infinity) c = bestCandidate(g.assetIndex, 0.75, tries);
-    if(!c || candidateScore(c,0.75) === -Infinity) c = bestCandidate(g.assetIndex, 0.45, tries);
+    let c = bestCandidate(g.assetIndex);
+    if(!c) c = bestCandidate(g.assetIndex, Math.max(tries, 180));
+    if(!c) c = bestCandidate(g.assetIndex, Math.max(tries, 260));
     if(!c) c = makeCandidate(g.assetIndex);
     place(c);
   }
@@ -2431,20 +2783,18 @@ function generate(){
       if(mode === 'random'){
         for(let t=0;t<tries;t++){
           const c = makeCandidate(assetIndex);
-          if(candidateScore(c,1) > -Infinity){
+          if(candidateScore(c) > -Infinity){
             chosen = c;
             break;
           }
         }
       }else{
         const samples = isMain ? Math.max(tries, 180) : tries;
-        chosen = bestCandidate(assetIndex, 1, samples);
-        if(chosen && candidateScore(chosen,1) === -Infinity) chosen = null;
+        chosen = bestCandidate(assetIndex, samples);
       }
 
       if(!chosen && mode === 'fill'){
-        chosen = bestCandidate(assetIndex, 0.75, Math.max(tries,160));
-        if(chosen && candidateScore(chosen,0.75) === -Infinity) chosen = null;
+        chosen = bestCandidate(assetIndex, Math.max(tries,160));
       }
 
       if(chosen) place(chosen);
