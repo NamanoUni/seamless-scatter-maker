@@ -3,13 +3,94 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<meta name="description" content="複数のPNG・SVG素材をブラウザ上でランダム配置し、シームレスなパターン画像を作成できる無料ツール。画像は端末内で処理されます。" />
+<meta name="description" content="複数のPNG・SVG画像を自動でランダム配置し、繰り返し使えるシームレスパターンを作成できる無料ブラウザツール。AI不使用・画像ファイルは外部送信せずブラウザ内で処理します。" />
 <meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://seamless-scatter-maker.pages.dev/" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="Seamless Scatter Maker" />
-<meta property="og:description" content="PNG・SVG素材からシームレスな散布パターンを作成。画像処理はブラウザ内で完結します。" />
+<meta property="og:locale" content="ja_JP" />
+<meta property="og:site_name" content="Seamless Scatter Maker" />
+<meta property="og:url" content="https://seamless-scatter-maker.pages.dev/" />
+<meta property="og:title" content="PNG・SVGをランダム配置してシームレスパターンを作る無料ツール | Seamless Scatter Maker" />
+<meta property="og:description" content="複数のPNG・SVG素材を自動で散らしてシームレスパターンを作成。AI不使用・画像ファイルは外部送信せず、ブラウザ内で処理します。" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="PNG・SVGをランダム配置してシームレスパターンを作る無料ツール" />
+<meta name="twitter:description" content="複数画像を自動で散らしてシームレス化。AI不使用・ブラウザ内処理の無料ツール。" />
 <link rel="stylesheet" href="site.css" />
-<title>Seamless Scatter Maker | シームレスパターン作成ツール</title>
+<title>PNG・SVGをランダム配置してシームレスパターンを作る無料ツール | Seamless Scatter Maker</title>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "Seamless Scatter Maker",
+      "url": "https://seamless-scatter-maker.pages.dev/",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Web",
+      "isAccessibleForFree": true,
+      "description": "複数のPNG・SVG画像を自動でランダム配置し、繰り返し使えるシームレスパターンを作成できる無料ブラウザツール。画像処理はブラウザ内で完結します。",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+      },
+      "featureList": [
+        "複数のPNG・SVG画像を読み込み",
+        "ランダム配置・均等配置",
+        "シームレスな上下左右の繰り返し",
+        "素材ごとの重み・最低配置数・サイズ・回転・左右反転設定",
+        "PNG書き出し",
+        "ブラウザ内でのローカル画像処理"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "PNGやSVGはサーバーにアップロードされますか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "いいえ。Seamless Scatter MakerはAI生成サービスではなく、画像の配置・合成・書き出しをブラウザ内で処理します。読み込んだPNG・SVGなどの画像ファイルを、当サイトのサーバーやAIサービスへ送信する処理はありません。画像をAIの解析や学習に使用することもありません。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "シームレスパターンとは何ですか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "上下左右に繰り返し並べても、画像の境界が自然につながって見えるパターン画像です。背景、テクスチャ、柄素材などに使えます。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "複数画像をランダム配置できますか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "はい。複数のPNG・SVGなどを同時に読み込み、自動で散らして配置できます。素材ごとに出現しやすさ、最低配置数、サイズ、回転、左右反転なども調整できます。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "CLIP STUDIO（クリスタ）の整列で十分じゃない？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "規則的に並べるなら十分です。ただ、複数の素材をランダムに散らして、端まで自然につながるシームレスパターンを作るには手作業が多かったので、このツールを作りました。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "商用利用できますか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "はい。Seamless Scatter Makerで作成した画像は商用利用できます。ただし、読み込んだ画像素材そのものの著作権や利用規約については、各素材の権利者が定める条件に従ってください。"
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
 <style>
   :root{
     --bg:#111318; --panel:#1a1e25; --panel2:#202632; --text:#eef2f7;
@@ -452,6 +533,67 @@
     .thumbs.compact{height:96px;min-height:96px;flex-basis:96px}
   }
 
+
+  .seo-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+    margin:20px 0 4px;
+  }
+  .seo-feature{
+    padding:14px 16px;
+    border:1px solid #2c3542;
+    border-radius:10px;
+    background:#11161d;
+  }
+  .seo-feature strong{display:block;margin-bottom:5px;font-size:14px;color:#e8edf5}
+  .seo-feature p{margin:0;font-size:13px}
+  .privacy-callout{
+    margin:20px 0;
+    padding:15px 17px;
+    border-left:3px solid var(--accent);
+    border-radius:8px;
+    background:#111927;
+  }
+  .privacy-callout strong{display:block;margin-bottom:5px;color:#e9f0ff}
+  .public-card h3{
+    margin:24px 0 7px;
+    font-size:16px;
+    line-height:1.55;
+    color:#eef2f7;
+  }
+  .public-card ul{
+    margin:8px 0 0;
+    padding-left:1.4em;
+    color:#b4becb;
+    line-height:1.8;
+  }
+  .faq-list{
+    margin-top:8px;
+    border-top:1px solid #2c3542;
+  }
+  .faq-item{
+    padding:17px 0;
+    border-bottom:1px solid #2c3542;
+  }
+  .faq-item h3{margin:0 0 7px;font-size:15px}
+  .faq-item p{margin:0}
+  .seo-section-title{margin-top:30px !important}
+  .seo-en-summary{
+    margin-top:28px;
+    padding-top:22px;
+    border-top:1px solid #313946;
+  }
+  .seo-en-summary h2{font-size:17px}
+  .public-lang-en{display:none}
+  html[lang="en"] .public-lang-ja{display:none}
+  html[lang="en"] .public-lang-en{display:block}
+  html[lang="ja"] .public-lang-ja{display:block}
+  html[lang="ja"] .public-lang-en{display:none}
+  @media(max-width:680px){
+    .seo-grid{grid-template-columns:1fr}
+    .seo-feature{padding:13px 14px}
+  }
 </style>
 </head>
 <body>
@@ -466,7 +608,7 @@
         <button id="langEn" class="langChoice" type="button">English</button>
       </div>
     </div>
-    <div class="hint"><span data-i18n="intro">透過PNGを複数読み込んで、ランダム配置したシームレス素材を作ります。処理はブラウザ内だけで完結します。</span></div>
+    <div class="hint"><span data-i18n="intro">PNG・SVGなどの画像素材を複数読み込んで、自動でランダム配置したシームレスパターンを作ります。画像処理はブラウザ内だけで完結します。</span></div>
 
     <div id="drop" class="drop">
       <strong data-i18n="dropTitle">PNG / SVGをドロップ</strong><br>
@@ -621,7 +763,7 @@
 
 const I18N = {
   ja: {
-    intro:'PNG・SVGなどの画像素材を複数読み込んで、ランダム配置したシームレス素材を作ります。処理はブラウザ内だけで完結します。',
+    intro:'PNG・SVGなどの画像素材を複数読み込んで、自動でランダム配置したシームレスパターンを作ります。画像処理はブラウザ内だけで完結します。',
     dropTitle:'PNG / SVGをドロップ', dropSub:'またはクリックして選択', assetSettings:'素材ごとの設定',
     asset:'素材', group:'グループ', weight:'重み', minimum:'最低', scalePct:'倍率%', flipPct:'反転率%', placementStats:'配置数',
     allOn:'全ON', allOff:'全OFF', weightNote:'「重み」は出現しやすさです。サイズ変更OFFは固定100%、ONの素材だけ指定倍率を使います。',
@@ -657,7 +799,7 @@ const I18N = {
     pngExportError:'PNG書き出しに失敗しました。'
   },
   en: {
-    intro:'Load PNG, SVG, and other image assets and scatter them into a seamless tile. All processing stays in your browser.',
+    intro:'Load multiple PNG, SVG, and other image assets and automatically scatter them into a seamless pattern. Image processing stays in your browser.',
     dropTitle:'Drop PNG / SVG files here', dropSub:'or click to choose files', assetSettings:'Per-asset settings',
     asset:'Asset', group:'Group', weight:'Weight', minimum:'Min', scalePct:'Scale %', flipPct:'Flip %', placementStats:'Placement',
     allOn:'All ON', allOff:'All OFF', weightNote:'Weight controls relative frequency. Size OFF uses a fixed 100%; only assets with Size ON use their custom scale.',
@@ -2320,28 +2462,203 @@ setupHelpTips();
 applyLanguage();
 </script>
 
-<section class="public-content" aria-labelledby="about-title">
+<section class="public-content" aria-label="Seamless Scatter Maker information">
   <!-- ADSENSE_BOTTOM_SLOT_START
        AdSense承認後、ここに広告ユニットのコードを貼り付けてください。
        生成ボタンや書き出しボタンのすぐ隣には広告を置かない設計にしています。
        ADSENSE_BOTTOM_SLOT_END -->
 
   <div class="public-card">
-    <h2 id="about-title">Seamless Scatter Makerについて</h2>
-    <p>
-      PNG・SVGなどの画像素材を複数読み込み、ランダム配置・グリッド配置・互い違い配置で
-      シームレスなパターン画像を作成できる無料ブラウザツールです。
-    </p>
-    <p>
-      読み込んだ画像は、このツール自身の処理ではサーバーへ送信せず、
-      お使いのブラウザ内で配置・合成・PNG書き出しを行います。
-    </p>
-    <nav class="public-links" aria-label="Site information">
-      <a href="how-to.html">使い方 / How to use</a>
-      <a href="privacy.html">プライバシーポリシー</a>
-      <a href="terms.html">利用規約</a>
-      <a href="contact.html">お問い合わせ</a>
-    </nav>
+    <div class="public-lang-ja" lang="ja">
+      <h2 id="about-title-ja">PNG・SVGをランダム配置してシームレスパターンを作る</h2>
+      <p>
+        Seamless Scatter Makerは、複数のPNG・SVGなどの画像素材を読み込み、
+        自動でバランスよく散らして、上下左右が自然につながるシームレスパターンを作成できる無料ブラウザツールです。
+        背景・テクスチャ・柄素材など、同じ画像を繰り返して使いたい場面に向いています。
+      </p>
+
+      <div class="privacy-callout">
+        <strong>AI不使用・画像ファイルは外部に送信しません</strong>
+        <p>
+          本ツールの画像処理にAIは使用していません。読み込んだ画像ファイルを当サイトのサーバーやAIサービスへ送信する処理はなく、
+          配置・合成・PNG書き出しはブラウザ内で行います。
+        </p>
+      </div>
+
+      <h2 class="seo-section-title">できること</h2>
+      <div class="seo-grid">
+        <div class="seo-feature">
+          <strong>複数画像をまとめて自動配置</strong>
+          <p>PNG・SVGなどの素材を複数読み込み、ランダムに散らして配置できます。</p>
+        </div>
+        <div class="seo-feature">
+          <strong>シームレスにつながる配置</strong>
+          <p>上下左右の端をまたいだ素材も考慮し、繰り返したときにつながるパターンを作ります。</p>
+        </div>
+        <div class="seo-feature">
+          <strong>素材ごとに細かく調整</strong>
+          <p>出現しやすさ、最低配置数、サイズ、回転、左右反転などを素材ごとに設定できます。</p>
+        </div>
+        <div class="seo-feature">
+          <strong>ランダム以外の配置にも対応</strong>
+          <p>均等ランダム、空白を埋める配置、完全ランダム、グリッド、互い違い配置を選べます。</p>
+        </div>
+      </div>
+
+      <h2 class="seo-section-title">こんな用途に</h2>
+      <ul>
+        <li>イラストや漫画の背景・柄素材を作りたいとき</li>
+        <li>複数のモチーフを手作業で何度も散らす作業を減らしたいとき</li>
+        <li>CLIP STUDIO PAINTなどで使うシームレス画像素材を作りたいとき</li>
+        <li>Web・印刷・デザイン用の繰り返しパターンやテクスチャを作りたいとき</li>
+      </ul>
+
+      <h2 class="seo-section-title">よくある質問</h2>
+      <div class="faq-list">
+        <section class="faq-item">
+          <h3>Q. PNGやSVGはサーバーにアップロードされますか？</h3>
+          <p>
+            いいえ。Seamless Scatter MakerはAI生成サービスではなく、画像の配置・合成・書き出しをブラウザ内で処理します。
+            読み込んだPNG・SVGなどの画像ファイルを、当サイトのサーバーやAIサービスへ送信する処理はありません。
+            画像をAIの解析や学習に使用することもありません。
+          </p>
+        </section>
+
+        <section class="faq-item">
+          <h3>Q. シームレスパターンとは何ですか？</h3>
+          <p>
+            上下左右に繰り返し並べても、画像の境界が自然につながって見えるパターン画像です。
+            背景、テクスチャ、柄素材などに使えます。
+          </p>
+        </section>
+
+        <section class="faq-item">
+          <h3>Q. 複数画像をランダム配置できますか？</h3>
+          <p>
+            はい。複数のPNG・SVGなどを同時に読み込み、自動で散らして配置できます。
+            素材ごとに出現しやすさ、最低配置数、サイズ、回転、左右反転なども調整できます。
+          </p>
+        </section>
+
+        <section class="faq-item">
+          <h3>Q. CLIP STUDIO（クリスタ）の整列で十分じゃない？</h3>
+          <p>
+            規則的に並べるなら十分です。ただ、複数の素材をランダムに散らして、端まで自然につながるシームレスパターンを作るには
+            手作業が多かったので、このツールを作りました。
+          </p>
+        </section>
+
+        <section class="faq-item">
+          <h3>Q. 商用利用できますか？</h3>
+          <p>
+            はい。Seamless Scatter Makerで作成した画像は商用利用できます。
+            ただし、読み込んだ画像素材そのものの著作権や利用規約については、各素材の権利者が定める条件に従ってください。
+          </p>
+        </section>
+      </div>
+
+      <nav class="public-links" aria-label="サイト情報">
+        <a href="how-to.html">使い方</a>
+        <a href="privacy.html">プライバシーポリシー</a>
+        <a href="terms.html">利用規約</a>
+        <a href="contact.html">お問い合わせ</a>
+      </nav>
+    </div>
+
+    <div class="public-lang-en" lang="en">
+      <h2 id="about-title-en">Create seamless patterns by scattering PNG and SVG assets</h2>
+      <p>
+        Seamless Scatter Maker is a free browser-based tool that loads multiple PNG, SVG, and other image assets,
+        automatically scatters them with balanced placement, and creates seamless patterns that connect naturally on all four edges.
+        It is useful for backgrounds, textures, surface patterns, and other designs that need to repeat cleanly.
+      </p>
+
+      <div class="privacy-callout">
+        <strong>No AI. Your image files are not sent outside your browser.</strong>
+        <p>
+          This tool does not use AI for image processing. It does not send the image files you load to this site's server or to an AI service.
+          Placement, compositing, and PNG export are performed locally in your browser.
+        </p>
+      </div>
+
+      <h2 class="seo-section-title">Features</h2>
+      <div class="seo-grid">
+        <div class="seo-feature">
+          <strong>Automatically scatter multiple images</strong>
+          <p>Load multiple PNG and SVG assets and scatter them automatically across the canvas.</p>
+        </div>
+        <div class="seo-feature">
+          <strong>Seamless edge wrapping</strong>
+          <p>Assets that cross the canvas edges are handled so the exported image repeats seamlessly.</p>
+        </div>
+        <div class="seo-feature">
+          <strong>Per-asset controls</strong>
+          <p>Adjust frequency, minimum count, size, rotation, and horizontal flipping for each asset.</p>
+        </div>
+        <div class="seo-feature">
+          <strong>Multiple placement modes</strong>
+          <p>Choose Balanced Random, Fill Gaps, Fully Random, Grid, or Offset Grid placement.</p>
+        </div>
+      </div>
+
+      <h2 class="seo-section-title">Useful for</h2>
+      <ul>
+        <li>Creating backgrounds and pattern assets for illustrations or comics</li>
+        <li>Reducing repetitive manual work when scattering multiple motifs</li>
+        <li>Creating seamless image materials for CLIP STUDIO PAINT and similar apps</li>
+        <li>Making repeating patterns and textures for web, print, and design projects</li>
+      </ul>
+
+      <h2 class="seo-section-title">Frequently asked questions</h2>
+      <div class="faq-list">
+        <section class="faq-item">
+          <h3>Q. Are my PNG or SVG files uploaded to a server?</h3>
+          <p>
+            No. Seamless Scatter Maker is not an AI generation service. Image placement, compositing, and export are processed in your browser.
+            The PNG, SVG, and other image files you load are not sent to this site's server or to an AI service, and they are not used for AI analysis or training.
+          </p>
+        </section>
+
+        <section class="faq-item">
+          <h3>Q. What is a seamless pattern?</h3>
+          <p>
+            A seamless pattern is an image whose edges connect naturally when it is repeated horizontally and vertically.
+            It can be used for backgrounds, textures, surface patterns, and other repeating designs.
+          </p>
+        </section>
+
+        <section class="faq-item">
+          <h3>Q. Can I randomly scatter multiple images?</h3>
+          <p>
+            Yes. You can load multiple PNG and SVG assets at the same time and scatter them automatically.
+            Each asset can have its own frequency, minimum count, size, rotation, and horizontal flip settings.
+          </p>
+        </section>
+
+        <section class="faq-item">
+          <h3>Q. Isn't CLIP STUDIO's alignment feature enough?</h3>
+          <p>
+            It works well for regular, orderly layouts. But randomly scattering multiple assets while keeping the pattern seamless at the edges can involve a lot of manual work,
+            so this tool was made to automate that process.
+          </p>
+        </section>
+
+        <section class="faq-item">
+          <h3>Q. Can I use the generated images commercially?</h3>
+          <p>
+            Yes. Images created with Seamless Scatter Maker can be used commercially.
+            However, you are responsible for following the copyright and license terms of the source image assets you load into the tool.
+          </p>
+        </section>
+      </div>
+
+      <nav class="public-links" aria-label="Site information">
+        <a href="how-to.html">How to use</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Use</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
   </div>
 </section>
 
